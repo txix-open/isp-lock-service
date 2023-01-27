@@ -22,6 +22,18 @@ type RC struct {
 	l       *log.Adapter
 }
 
+func NewRCWithClient(cfg conf.Remote, l *log.Adapter, cli *goredislib.Client) (*RC, error) {
+	r := RC{
+		timeOut: cfg.Redis.DefaultTimeOut * time.Second,
+		prefix:  cfg.Redis.Prefix,
+		l:       l,
+	}
+
+	r.cli = redsync.New(goredis.NewPool(cli))
+
+	return &r, nil
+}
+
 func NewRC(cfg conf.Remote, l *log.Adapter) (*RC, error) {
 	r := RC{
 		timeOut: cfg.Redis.DefaultTimeOut * time.Second,

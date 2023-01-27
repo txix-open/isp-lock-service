@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Request struct {
-	Key     string
+	Key     string `json:"Key" valid:"required"`
 	LockKey string
 	TTL     time.Duration
 }
