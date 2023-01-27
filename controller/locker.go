@@ -12,7 +12,7 @@ type LockerService interface {
 	// All(ctx context.Context) ([]domain.Locker, error)
 	// Get(ctx context.Context, id int) (*domain.Locker, error)
 	Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error)
-	UnLock(ctx context.Context, req domain.Request) error
+	UnLock(ctx context.Context, req domain.Request) (domain.LockResponse, error)
 }
 
 type Locker struct {
@@ -25,7 +25,7 @@ func (l Locker) Lock(ctx context.Context, req domain.Request) (*domain.LockRespo
 	return l.s.Lock(ctx, req)
 }
 
-func (l Locker) UnLock(ctx context.Context, req domain.Request) error {
+func (l Locker) UnLock(ctx context.Context, req domain.Request) (domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call ctrl.UnLock")
 	return l.s.UnLock(ctx, req)
 }

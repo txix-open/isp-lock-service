@@ -4,7 +4,8 @@ Content-Type: application/json
 X-Application-Token: {{token}}
 
 {
-    "key": "abc"
+    "key": "abc",
+    "ttl": 20
 }
 > {%
     client.global.set("lockKey", response.body.lockKey);
@@ -17,7 +18,7 @@ X-Application-Token: {{token}}
 
 {
     "key": "abc",
-    "lock_key": "{{lockKey}}"
+    "lockKey": "{{lockKey}}"
 }
 
 ###

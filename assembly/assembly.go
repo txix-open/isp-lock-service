@@ -9,7 +9,6 @@ import (
 	"github.com/integration-system/isp-kit/app"
 	"github.com/integration-system/isp-kit/bootstrap"
 	"github.com/integration-system/isp-kit/cluster"
-	"github.com/integration-system/isp-kit/grmqx"
 	"github.com/integration-system/isp-kit/grpc"
 	"github.com/integration-system/isp-kit/grpc/client"
 	"github.com/integration-system/isp-kit/log"
@@ -36,9 +35,9 @@ func New(boot *bootstrap.Bootstrap) (*Assembly, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "create mdm client")
 	}
-	mqCli := grmqx.New(boot.App.Logger())
-	// boot.HealthcheckRegistry.Register("db", db)
-	boot.HealthcheckRegistry.Register("mq", mqCli)
+	// mqCli := grmqx.New(boot.App.Logger())
+	// // boot.HealthcheckRegistry.Register("db", db)
+	// boot.HealthcheckRegistry.Register("mq", mqCli)
 	return &Assembly{
 		boot: boot,
 		// db:     db,
@@ -72,7 +71,7 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 	// 	a.logger.Fatal(ctx, errors.WithMessage(err, "upgrade db client"))
 	// }
 
-	locator := NewLocator(a.logger)
+	locator := NewLocator(a.logger, a.redisCli)
 	handler := locator.Handler()
 	a.server.Upgrade(handler)
 

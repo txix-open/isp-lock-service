@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"isp-lock-service/controller"
+	"isp-lock-service/rc"
 	"isp-lock-service/repository"
 	"isp-lock-service/routes"
 	"isp-lock-service/service"
@@ -19,19 +20,21 @@ type DB interface {
 
 type Locator struct {
 	// db     DB
+	rc     *rc.RC
 	logger log.Logger
 }
 
-func NewLocator(logger log.Logger) Locator {
+func NewLocator(logger log.Logger, rc *rc.RC) Locator {
 	return Locator{
 		// db:     db,
+		rc:     rc,
 		logger: logger,
 	}
 }
 
 func (l Locator) Handler() *grpc.Mux {
 	// objectRepo := repository.NewObject()
-	lockRepo := repository.NewLocker(l.logger)
+	lockRepo := repository.NewLocker(l.logger, l.rc)
 	// objectService := service.NewObject(objectRepo)
 	lockerService := service.NewLocker(l.logger, lockRepo)
 	// objectController := controller.NewObject(objectService)

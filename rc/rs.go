@@ -51,7 +51,7 @@ func makeKey(prefix, key string) string {
 func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 	key = makeKey(rc.prefix, key)
 
-	if ttl > 0 {
+	if ttl == 0 {
 		ttl = rc.timeOut
 	}
 

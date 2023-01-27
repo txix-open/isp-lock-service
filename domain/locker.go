@@ -3,10 +3,11 @@ package domain
 import "time"
 
 type Request struct {
-	Key string
-	TTL time.Duration
+	Key     string
+	LockKey string
+	TTL     time.Duration
 }
 
 type LockResponse struct {
-	LockKey string
+	LockKey string `json:"lockKey,omitempty"`
 }
