@@ -2,27 +2,30 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"isp-lock-service/domain"
+
+	"github.com/integration-system/isp-kit/log"
 )
 
 type Locker struct {
 	// db db.DB
+	logger log.Logger
 }
 
 func (l Locker) Lock(ctx context.Context, req domain.Request) error {
-	fmt.Println("call repo.Lock")
+	l.logger.Debug(ctx, "call repo.Lock")
 	return nil
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.Request) error {
-	fmt.Println("call repo.UnLock")
+	l.logger.Debug(ctx, "call repo.UnLock")
 	return nil
 }
 
-func NewLocker() Locker {
+func NewLocker(logger log.Logger) Locker {
 	return Locker{
 		// db: db,
+		logger: logger,
 	}
 }

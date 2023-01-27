@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"isp-lock-service/domain"
+
+	"github.com/integration-system/isp-kit/log"
 )
 
 type LockerRepo interface {
@@ -15,22 +16,24 @@ type LockerRepo interface {
 }
 
 type Locker struct {
-	repo LockerRepo
+	repo   LockerRepo
+	logger log.Logger
 }
 
 func (l Locker) Lock(ctx context.Context, req domain.Request) error {
-	fmt.Println("call srv.Lock")
+	l.logger.Debug(ctx, "call srv.Lock")
 	return l.repo.Lock(ctx, req)
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.Request) error {
-	fmt.Println("call srv.UnLock")
+	l.logger.Debug(ctx, "call srv.UnLock")
 	return l.repo.UnLock(ctx, req)
 }
 
-func NewLocker(repo LockerRepo) Locker {
+func NewLocker(logger log.Logger, repo LockerRepo) Locker {
 	return Locker{
-		repo: repo,
+		repo:   repo,
+		logger: logger,
 	}
 }
 

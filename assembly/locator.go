@@ -31,11 +31,11 @@ func NewLocator(logger log.Logger) Locator {
 
 func (l Locator) Handler() *grpc.Mux {
 	// objectRepo := repository.NewObject()
-	lockRepo := repository.NewLocker()
+	lockRepo := repository.NewLocker(l.logger)
 	// objectService := service.NewObject(objectRepo)
-	lockerService := service.NewLocker(lockRepo)
+	lockerService := service.NewLocker(l.logger, lockRepo)
 	// objectController := controller.NewObject(objectService)
-	lockerController := controller.NewLocker(lockerService)
+	lockerController := controller.NewLocker(l.logger, lockerService)
 	c := routes.Controllers{
 		// Object: objectController,
 		Locker: lockerController,
