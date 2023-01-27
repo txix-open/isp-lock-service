@@ -13,9 +13,9 @@ type Locker struct {
 	logger log.Logger
 }
 
-func (l Locker) Lock(ctx context.Context, req domain.Request) error {
+func (l Locker) Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call repo.Lock")
-	return nil
+	return &domain.LockResponse{LockKey: "abcde"}, nil
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.Request) error {

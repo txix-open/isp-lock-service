@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	goredislib "github.com/go-redis/redis/v8"
@@ -18,16 +17,31 @@ func main() {
 	rs := redsync.New(pool)
 
 	mutexname := "my-global-mutex"
-	mutex := rs.NewMutex(mutexname, redsync.WithExpiry(time.Minute))
+	mutex := rs.NewMutex(mutexname, redsync.WithExpiry(time.Second))
 
 	if err := mutex.Lock(); err != nil {
 		panic(err)
 	}
 
-	var a string
-	fmt.Scanf("%s", &a)
-
-	if ok, err := mutex.Unlock(); !ok || err != nil {
-		panic("unlock failed")
+	if ok, err := rs.NewMutex(mutexname, redsync.WithValue(mutex.Value())).Unlock(); !ok || err != nil {
+		// if ok, err := mutex.Unlock(); !ok || err != nil {
+		println("unlock failed#1")
+	} else {
+		println("ok#1")
 	}
+
+	// time.Sleep(time.Second * 2)
+	//
+	// if ok, err := rs.NewMutex(mutexname).Unlock(); !ok || err != nil {
+	// 	println("unlock failed#2")
+	// } else {
+	// 	println("ok#2")
+	// }
+	//
+	// if ok, err := mutex.Unlock(); !ok || err != nil {
+	// 	println("unlock failed#3")
+	// } else {
+	// 	println("ok#3")
+	// }
+
 }

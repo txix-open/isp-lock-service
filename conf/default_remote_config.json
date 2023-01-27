@@ -2,6 +2,8 @@
     "logLevel": "debug",
     "redis": {
         "server": "localhost:6379",
+        "password": "",
+        "db": 0,
         "prefix": "isp-lock-service",
         "defaultTimeOut": 10
     }
