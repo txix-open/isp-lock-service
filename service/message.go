@@ -12,7 +12,7 @@ package service
 // )
 //
 // type MessageTransaction interface {
-// 	Lock(ctx context.Context, key string) error
+// 	Lock(ctx context.Context, req domain.Request) error
 // 	Insert(ctx context.Context, msg entity.Message) error
 // 	GetLastVersion(ctx context.Context, id int64) (int64, error)
 // 	UpdateById(ctx context.Context, msg entity.Message) error

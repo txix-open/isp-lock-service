@@ -74,3 +74,4 @@ package.json
 yarn.lock
 
 conf/config_dev.yml
+/http-client.private.env.json

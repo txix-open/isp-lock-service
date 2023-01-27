@@ -1,12 +1,31 @@
 package service
 
+import (
+	"context"
+	"fmt"
+
+	"isp-lock-service/domain"
+)
+
 type LockerRepo interface {
 	// All(ctx context.Context) ([]entity.Locker, error)
 	// Get(ctx context.Context, id int) (*entity.Locker, error)
+	Lock(ctx context.Context, req domain.Request) error
+	UnLock(ctx context.Context, req domain.Request) error
 }
 
 type Locker struct {
 	repo LockerRepo
+}
+
+func (l Locker) Lock(ctx context.Context, req domain.Request) error {
+	fmt.Println("call srv.Lock")
+	return l.repo.Lock(ctx, req)
+}
+
+func (l Locker) UnLock(ctx context.Context, req domain.Request) error {
+	fmt.Println("call srv.UnLock")
+	return l.repo.UnLock(ctx, req)
 }
 
 func NewLocker(repo LockerRepo) Locker {

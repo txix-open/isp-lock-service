@@ -1,0 +1,14 @@
+### Lock
+POST http://{{address}}/api/isp-lock-service/lock
+Content-Type: application/json
+X-Application-Token: {{token}}
+
+{}
+### UnLock
+POST http://{{address}}/api/isp-lock-service/unlock
+Content-Type: application/json
+X-Application-Token: {{token}}
+
+{}
+
+###

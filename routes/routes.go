@@ -26,16 +26,15 @@ func Handler(wrapper endpoint.Wrapper, c Controllers) *grpc.Mux {
 }
 
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
-	return nil
 	return []cluster.EndpointDescriptor{{
-		// 	Path:             "isp-lock-service/object/all",
-		// 	Inner:            false,
-		// 	UserAuthRequired: false,
-		// 	Handler:          c.Object.All,
-		// }, {
-		// 	Path:             "isp-lock-service/object/get_by_id",
-		// 	Inner:            false,
-		// 	UserAuthRequired: false,
-		// 	Handler:          c.Object.GetById,
+		Path:             "isp-lock-service/lock",
+		Inner:            false, // TODO: заменить на true - это д.б. внутренний метод
+		UserAuthRequired: false,
+		Handler:          c.Locker.Lock,
+	}, {
+		Path:             "isp-lock-service/unlock",
+		Inner:            false, // TODO: заменить на true - это д.б. внутренний метод
+		UserAuthRequired: false,
+		Handler:          c.Locker.UnLock,
 	}}
 }

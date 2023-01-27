@@ -18,7 +18,7 @@ package repository
 // 	return Locker{db: db}
 // }
 //
-// func (l Locker) Lock(ctx context.Context, key string) error {
+// func (l Locker) Lock(ctx context.Context, req domain.Request) error {
 // 	ctx = sql_metrics.OperationLabelToContext(ctx, "Locker.Lock")
 //
 // 	hash := fnv.New32a()
@@ -35,7 +35,7 @@ package repository
 // 	return nil
 // }
 //
-// func (l Locker) TryLock(ctx context.Context, key string) (bool, error) {
+// func (l Locker) TryLock(ctx context.Context, req domain.Request) (bool, error) {
 // 	ctx = sql_metrics.OperationLabelToContext(ctx, "Locker.TryLock")
 //
 // 	hash := fnv.New32a()
