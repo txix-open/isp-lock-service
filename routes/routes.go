@@ -9,7 +9,6 @@ import (
 )
 
 type Controllers struct {
-	Object controller.Object
 	Locker controller.Locker
 }
 

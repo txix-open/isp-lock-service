@@ -9,8 +9,8 @@ import (
 )
 
 type LockerRepo interface {
-	Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error)
-	UnLock(ctx context.Context, req domain.Request) (*domain.LockResponse, error)
+	Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error)
+	UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error)
 }
 
 type Locker struct {
@@ -18,12 +18,12 @@ type Locker struct {
 	logger log.Logger
 }
 
-func (l Locker) Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error) {
+func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call srv.Lock")
 	return l.repo.Lock(ctx, req)
 }
 
-func (l Locker) UnLock(ctx context.Context, req domain.Request) (*domain.LockResponse, error) {
+func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call srv.UnLock")
 	return l.repo.UnLock(ctx, req)
 }

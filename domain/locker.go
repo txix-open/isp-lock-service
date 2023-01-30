@@ -2,10 +2,14 @@ package domain
 
 import "time"
 
-type Request struct {
+type LockRequest struct {
+	Key string `json:"Key" valid:"required"`
+	TTL time.Duration
+}
+
+type UnLockRequest struct {
 	Key     string `json:"Key" valid:"required"`
 	LockKey string
-	TTL     time.Duration
 }
 
 type LockResponse struct {

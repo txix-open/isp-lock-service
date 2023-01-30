@@ -2,7 +2,6 @@ package rc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,9 +11,8 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	"github.com/integration-system/isp-kit/log"
+	"go.uber.org/zap"
 )
-
-var ErrAlreadyLocked = errors.New("already locked")
 
 type RC struct {
 	cli     *redsync.Redsync
@@ -23,10 +21,10 @@ type RC struct {
 	l       *log.Adapter
 }
 
-func NewRCWithClient(cfg conf.Remote, l *log.Adapter, cli *goredislib.Client) (*RC, error) {
+func NewRCWithClient(prefix string, timeOut time.Duration, l *log.Adapter, cli *goredislib.Client) (*RC, error) {
 	r := RC{
-		timeOut: cfg.Redis.DefaultTimeOut * time.Second,
-		prefix:  cfg.Redis.Prefix,
+		timeOut: timeOut,
+		prefix:  prefix,
 		l:       l,
 	}
 
@@ -69,6 +67,19 @@ func makeKey(prefix, key string) string {
 	return prefix + "::" + key
 }
 
+func (rc *RC) log(level string, message interface{}, fields ...zap.Field) {
+	if rc.l != nil {
+		switch level {
+		case "error":
+			rc.l.Error(context.Background(), message, fields...)
+		case "info":
+			rc.l.Info(context.Background(), message, fields...)
+		default:
+			rc.l.Debug(context.Background(), message, fields...)
+		}
+	}
+}
+
 // Lock - функция установки лока по ключу
 //
 //	key - суффикс ключа
@@ -81,16 +92,17 @@ func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 	if ttl == 0 {
 		ttl = rc.timeOut
 	}
+	rc.log("debug", "пробуем залочить "+key+" на "+ttl.String())
 
-	rc.l.Debug(context.Background(), "пробуем залочить "+key+" на "+ttl.String())
 	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
+
 	if err := mtx.Lock(); err != nil {
-		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
+		rc.log("debug", fmt.Sprintf("err=%#v", err))
 		return "", err
 	}
 
 	value := mtx.Value()
-	rc.l.Debug(context.Background(), "ключ для разблокировки "+value)
+	rc.log("debug", "ключ для разблокировки "+value)
 	return value, nil
 }
 
@@ -101,13 +113,13 @@ func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 func (rc *RC) UnLock(key, lockKey string) (bool, error) {
 	key = makeKey(rc.prefix, key)
 
-	rc.l.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
+	rc.log("debug", "пробуем разлочить "+key+"+"+lockKey)
 
 	ok, err := rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
 
-	rc.l.Debug(context.Background(), fmt.Sprint("ok=", ok))
+	rc.log("debug", fmt.Sprint("ok=", ok))
 	if err != nil {
-		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
+		rc.log("debug", fmt.Sprintf("err=%#v", err))
 	}
 
 	return ok, err
