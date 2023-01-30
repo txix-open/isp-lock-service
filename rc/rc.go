@@ -41,11 +41,23 @@ func NewRC(cfg conf.Remote, l *log.Adapter) (*RC, error) {
 		l:       l,
 	}
 
-	r.cli = redsync.New(goredis.NewPool(goredislib.NewClient(&goredislib.Options{
+	cli := goredislib.NewClient(&goredislib.Options{
 		Addr:     cfg.Redis.Server,
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.DB,
-	})))
+	})
+
+	if cfg.Redis.RedisSentinel != nil {
+		cli = goredislib.NewFailoverClient(&goredislib.FailoverOptions{
+			MasterName:       cfg.Redis.RedisSentinel.MasterName,
+			SentinelAddrs:    cfg.Redis.RedisSentinel.Addresses,
+			SentinelUsername: cfg.Redis.RedisSentinel.Username,
+			SentinelPassword: cfg.Redis.RedisSentinel.Password,
+			Password:         cfg.Redis.Password,
+		})
+	}
+
+	r.cli = redsync.New(goredis.NewPool(cli))
 
 	return &r, nil
 }
