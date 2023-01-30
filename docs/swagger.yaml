@@ -1,26 +1,8 @@
 basePath: /api/isp-lock-service
 definitions:
-  domain.ByIdRequest:
+  domain.LockResponse:
     properties:
-      id:
-        type: integer
-    required:
-    - id
-    type: object
-  domain.GrpcError:
-    properties:
-      details:
-        items:
-          type: object
-        type: array
-      errorCode:
-        type: string
-      errorMessage:
-        type: string
-    type: object
-  domain.Object:
-    properties:
-      name:
+      lockKey:
         type: string
     type: object
 host: localhost:9000
@@ -32,55 +14,37 @@ info:
   title: isp-lock-service
   version: 1.0.0
 paths:
-  /object/all:
+  /api/isp-lock-service/lock:
     post:
       consumes:
       - application/json
-      description: Возвращает список объектов
+      description: |-
+        `key` - строка для лока
+        `ttl` - число секунд после которых блокировка снимется автоматически
+        Возвращаем ключ для разблокировки
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/domain.Object'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/domain.GrpcError'
-      summary: Получить все объекты
+            $ref: '#/definitions/domain.LockResponse'
+      summary: выставляем лок на строку
       tags:
-      - object
-  /object/get_by_id:
+      - locker
+  /api/isp-lock-service/unlock:
     post:
       consumes:
       - application/json
-      description: Возвращает объект
-      parameters:
-      - description: Идентификатор объекта
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/domain.ByIdRequest'
+      description: |-
+        `key` - строка для лока
+        `locKKey` - ключ для разблокировки, полученный из Lock
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.Object'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/domain.GrpcError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/domain.GrpcError'
-      summary: Получить объект по его идентификатору
+          description: ""
+      summary: снимаем лок со строки
       tags:
-      - object
+      - locker
 swagger: "2.0"

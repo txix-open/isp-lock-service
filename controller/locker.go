@@ -9,8 +9,8 @@ import (
 )
 
 type LockerService interface {
-	Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error)
-	UnLock(ctx context.Context, req domain.Request) (*domain.LockResponse, error)
+	Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error)
+	UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error)
 }
 
 type Locker struct {
@@ -22,13 +22,13 @@ type Locker struct {
 // @Tags locker
 // @Summary выставляем лок на строку
 // @Description `key` - строка для лока
+// @Description `ttl` - число секунд после которых блокировка снимется автоматически
 // @Description Возвращаем ключ для разблокировки
 // @Accept json
 // @Produce json
 // @Success 200 {object} domain.LockResponse
-// @Failure 500 {object}
 // @Router /api/isp-lock-service/lock [POST]
-func (l Locker) Lock(ctx context.Context, req domain.Request) (*domain.LockResponse, error) {
+func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call ctrl.Lock")
 	return l.s.Lock(ctx, req)
 }
@@ -40,10 +40,9 @@ func (l Locker) Lock(ctx context.Context, req domain.Request) (*domain.LockRespo
 // @Description `locKKey` - ключ для разблокировки, полученный из Lock
 // @Accept json
 // @Produce json
-// @Success 200 {object} domain.LockResponse
-// @Failure 500 {object} {}
-// @Router /api/isp-lock-service/lock [POST]
-func (l Locker) UnLock(ctx context.Context, req domain.Request) (*domain.LockResponse, error) {
+// @Success 200
+// @Router /api/isp-lock-service/unlock [POST]
+func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call ctrl.UnLock")
 	return l.s.UnLock(ctx, req)
 }
