@@ -26,6 +26,7 @@ type Remote struct {
 	LogLevel log.Level `schemaGen:"logLevel"  schema:"Уровень логирования"`
 	Redis    struct {
 		Server         string        `schemaGen:"server"  schema:"Адрес сервера redis, обязателен, если sentinel не указан"`
+		UserName       string        `schemaGen:"userName"  schema:"Имя пользователя в  redis"`
 		Password       string        `schemaGen:"password"  schema:"Пароль для redis"`
 		DB             int           `schemaGen:"db"  schema:"номер БД в redis"`
 		Prefix         string        `schemaGen:"prefix"  schema:"Префикс ключей для модуля"`
