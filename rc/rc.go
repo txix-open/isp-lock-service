@@ -3,6 +3,7 @@ package rc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"isp-lock-service/conf"
@@ -41,11 +42,25 @@ func NewRC(cfg conf.Remote, l *log.Adapter) (*RC, error) {
 		l:       l,
 	}
 
-	r.cli = redsync.New(goredis.NewPool(goredislib.NewClient(&goredislib.Options{
+	cli := goredislib.NewClient(&goredislib.Options{
 		Addr:     cfg.Redis.Server,
+		Username: cfg.Redis.UserName,
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.DB,
-	})))
+	})
+
+	if cfg.Redis.RedisSentinel != nil {
+		cli = goredislib.NewFailoverClient(&goredislib.FailoverOptions{
+			MasterName:       cfg.Redis.RedisSentinel.MasterName,
+			SentinelAddrs:    cfg.Redis.RedisSentinel.Addresses,
+			SentinelUsername: cfg.Redis.RedisSentinel.Username,
+			SentinelPassword: cfg.Redis.RedisSentinel.Password,
+			Password:         cfg.Redis.Password,
+			Username:         cfg.Redis.UserName,
+		})
+	}
+
+	r.cli = redsync.New(goredis.NewPool(cli))
 
 	return &r, nil
 }
@@ -70,6 +85,7 @@ func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 	rc.l.Debug(context.Background(), "пробуем залочить "+key+" на "+ttl.String())
 	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
 	if err := mtx.Lock(); err != nil {
+		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
 		return "", err
 	}
 
@@ -87,5 +103,12 @@ func (rc *RC) UnLock(key, lockKey string) (bool, error) {
 
 	rc.l.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
 
-	return rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
+	ok, err := rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
+
+	rc.l.Debug(context.Background(), fmt.Sprint("ok=", ok))
+	if err != nil {
+		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
+	}
+
+	return ok, err
 }

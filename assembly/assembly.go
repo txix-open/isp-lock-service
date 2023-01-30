@@ -60,7 +60,6 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 
 	a.logger.SetLevel(newCfg.LogLevel)
 
-	// TODO: добавить сентиль
 	a.redisCli, err = rc.NewRC(newCfg, a.logger)
 	if err != nil {
 		a.logger.Fatal(ctx, errors.WithMessage(err, "error on connect to redis"))
