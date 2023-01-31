@@ -2,23 +2,33 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"isp-lock-service/conf"
 	"isp-lock-service/domain"
-	"isp-lock-service/rc"
 
+	goredislib "github.com/go-redis/redis/v8"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	"github.com/integration-system/isp-kit/log"
 )
 
 type Locker struct {
-	// db db.DB
-	rc     *rc.RC
+	rc     *RC
 	logger log.Logger
+}
+
+func NewLocker(logger log.Logger, rc *RC) Locker {
+	return Locker{
+		rc:     rc,
+		logger: logger,
+	}
 }
 
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call repo.Lock")
-	val, err := l.rc.Lock(req.Key, req.TTL*time.Second)
+	val, err := l.rc.Lock(req.Key, req.TTLInSec*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -35,10 +45,94 @@ func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.L
 	return &domain.LockResponse{}, nil
 }
 
-func NewLocker(logger log.Logger, rc *rc.RC) Locker {
-	return Locker{
-		// db: db,
-		rc:     rc,
-		logger: logger,
+type RC struct {
+	cli    *redsync.Redsync
+	prefix string
+	l      log.Logger
+}
+
+func NewRC(cfg conf.Remote, l log.Logger) (*RC, error) {
+	r := RC{
+		prefix: cfg.Redis.Prefix,
+		l:      l,
 	}
+
+	cli := goredislib.NewClient(&goredislib.Options{
+		Addr:     cfg.Redis.Address,
+		Username: cfg.Redis.Username,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+
+	if cfg.Redis.Sentinel != nil {
+		cli = goredislib.NewFailoverClient(&goredislib.FailoverOptions{
+			MasterName:       cfg.Redis.Sentinel.MasterName,
+			SentinelAddrs:    cfg.Redis.Sentinel.Addresses,
+			SentinelUsername: cfg.Redis.Sentinel.Username,
+			SentinelPassword: cfg.Redis.Sentinel.Password,
+			Password:         cfg.Redis.Password,
+			Username:         cfg.Redis.Username,
+		})
+	}
+
+	r.cli = redsync.New(goredis.NewPool(cli))
+
+	return &r, nil
+}
+
+func NewRCWithClient(prefix string, l log.Logger, cli *goredislib.Client) (*RC, error) {
+	r := RC{
+		prefix: prefix,
+		l:      l,
+	}
+
+	r.cli = redsync.New(goredis.NewPool(cli))
+
+	return &r, nil
+}
+
+func makeKey(prefix, key string) string {
+	return prefix + "::" + key
+}
+
+// Lock - функция установки лока по ключу
+//
+//	key - суффикс ключа
+//	ttl - время жизни ключа
+//
+//	Возвращает ключ для разблокировки
+func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
+	key = makeKey(rc.prefix, key)
+
+	rc.l.Debug(context.Background(), "пробуем залочить "+key+" на "+ttl.String())
+
+	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
+
+	if err := mtx.Lock(); err != nil {
+		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
+		return "", err
+	}
+
+	value := mtx.Value()
+	rc.l.Debug(context.Background(), "ключ для разблокировки "+value)
+	return value, nil
+}
+
+// UnLock - функция снятия лока по ключу
+//
+//	key - суффикс ключа
+//	lockKey - ключ, полученный в ответе из функции Lock
+func (rc *RC) UnLock(key, lockKey string) (bool, error) {
+	key = makeKey(rc.prefix, key)
+
+	rc.l.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
+
+	ok, err := rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
+
+	rc.l.Debug(context.Background(), fmt.Sprint("ok=", ok))
+	if err != nil {
+		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
+	}
+
+	return ok, err
 }

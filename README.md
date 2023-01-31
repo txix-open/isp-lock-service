@@ -12,7 +12,7 @@
 - isp-lock-service/lock
 - входящий запрос
   - key - строка, описывающая, что мы блокируем. ОБЯЗАТЕЛЬНОЕ
-  - ttl - число секунд после которых блокировка снимется автоматически. Если не передано, то будет использовано значение из конфига (.redis.defaultTimeOut)
+  - ttlInSec - число секунд после которых блокировка снимется автоматически. Если не передано, то будет использовано значение из конфига (.redis.defaultTimeOut). . ОБЯЗАТЕЛЬНОЕ
 - ответ
   - lockKey - строка. ключ для разблокировки, чтобы тот, кто не ставил блокировку не мог ее снять 
 
@@ -25,7 +25,7 @@ X-Application-Token: {{token}}
 
 {
     "key": "abc",
-    "ttl": 20
+    "ttlInSec": 20
 }
 ```
 
@@ -70,22 +70,39 @@ X-Application-Token: {{token}}
 
 В конфигурации надо указать либо адрес для подключения к redis (.redis.server), либо настройки sentinel (.redis.sentinel.*)
 
-```go
-type Remote struct {
-	LogLevel log.Level `schemaGen:"logLevel"  schema:"Уровень логирования"`
-	Redis    struct {
-		Server         string        `schemaGen:"server"  schema:"Адрес сервера redis, обязателен, если sentinel не указан"`
-		UserName       string        `schemaGen:"userName"  schema:"Имя пользователя в  redis"`
-		Password       string        `schemaGen:"password"  schema:"Пароль для redis"`
-		DB             int           `schemaGen:"db"  schema:"номер БД в redis"`
-		Prefix         string        `schemaGen:"prefix"  schema:"Префикс ключей для модуля"`
-		DefaultTimeOut time.Duration `schemaGen:"defaultTimeOut"  schema:"TTL по умолчанию, в секундах"`
-		RedisSentinel  *struct {
-			Addresses  []string `schema:"Адреса нод в кластере"`
-			MasterName string   `schema:"Имя мастера"`
-			Username   string   `schema:"Имя пользователя в sentinel"`
-			Password   string   `schema:"Пароль в sentinel"`
-		} `schema:"Настройки sentinel,обязательна, если redis.server не указан"`
-	} `schemaGen:"redis"  schema:"Настройки redis"`
+### конфигурация без sentinel
+```json
+{
+	"redis": {
+		"address": "localhost:6379", // адрес сервера редис
+		"prefix": "isp-lock-service", // префикс ключей
+        "db": 0, // номер БД редис
+        "userName": "", // имя для сервера
+        "password": "" // пароль для соединения
+	},
+	"logLevel": "debug", // уровень логирования
+	"defaultTimeOutInSec": 10 // время жизни ключа в redis, если его не разлочили
+}
+```
+
+### конфигурация для использования sentinel
+```json
+{
+	"redis": {
+		"address": "", // адрес сервера редис ПУСТО!!!
+		"prefix": "isp-lock-service", // префикс ключей
+        "db": 0, // номер БД редис
+        "userName": "", // имя для сервера
+        "password": "",  // пароль для соединения
+        "sentinel": {
+            "addresses":  ["192.168.1.1:6379","192.168.1.2:6379"], // Адреса нод в кластере
+            "masterName": "192.168.1.1:6379", //Имя мастера
+            "userName":  "root", // Имя пользователя в sentinel
+            "password": "secret" // Пароль в sentinel
+
+}
+	},
+	"logLevel": "debug", // уровень логирования
+	"defaultTimeOutInSec": 10 // время жизни ключа в redis, если его не разлочили
 }
 ```

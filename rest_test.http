@@ -5,7 +5,7 @@ X-Application-Token: {{token}}
 
 {
     "key": "abc",
-    "ttl": 20
+    "ttlInSec": 15
 }
 > {%
     client.global.set("lockKey", response.body.lockKey);

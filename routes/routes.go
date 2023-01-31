@@ -27,12 +27,12 @@ func Handler(wrapper endpoint.Wrapper, c Controllers) *grpc.Mux {
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{{
 		Path:             "isp-lock-service/lock",
-		Inner:            false, // TODO: заменить на true - это д.б. внутренний метод
+		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.Locker.Lock,
 	}, {
 		Path:             "isp-lock-service/unlock",
-		Inner:            false, // TODO: заменить на true - это д.б. внутренний метод
+		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.Locker.UnLock,
 	}}

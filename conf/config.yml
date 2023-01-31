@@ -4,10 +4,10 @@ configServiceAddress:
   port: 9001
 grpcOuterAddress:
   #ip: 127.0.0.1
-  port: 9999
+  port: 9740
 grpcInnerAddress:
   ip: 0.0.0.0
-  port: 9999
+  port: 9740
 moduleName: isp-lock-service
 
 logfile:

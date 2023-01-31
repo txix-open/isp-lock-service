@@ -3,15 +3,15 @@ package domain
 import "time"
 
 type LockRequest struct {
-	Key string `json:"Key" valid:"required"`
-	TTL time.Duration
+	Key      string        `valid:"required"`
+	TTLInSec time.Duration `valid:"required"`
 }
 
 type UnLockRequest struct {
-	Key     string `json:"Key" valid:"required"`
-	LockKey string
+	Key     string `valid:"required"`
+	LockKey string `valid:"required"`
 }
 
 type LockResponse struct {
-	LockKey string `json:"lockKey,omitempty"`
+	LockKey string `json:",omitempty"`
 }

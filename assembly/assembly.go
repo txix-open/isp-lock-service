@@ -4,47 +4,29 @@ import (
 	"context"
 
 	"isp-lock-service/conf"
-	"isp-lock-service/rc"
+	"isp-lock-service/repository"
 
 	"github.com/integration-system/isp-kit/app"
 	"github.com/integration-system/isp-kit/bootstrap"
 	"github.com/integration-system/isp-kit/cluster"
 	"github.com/integration-system/isp-kit/grpc"
-	"github.com/integration-system/isp-kit/grpc/client"
 	"github.com/integration-system/isp-kit/log"
 	"github.com/pkg/errors"
 )
 
 type Assembly struct {
-	boot *bootstrap.Bootstrap
-	// db     *dbrx.Client
+	boot     *bootstrap.Bootstrap
 	server   *grpc.Server
-	mdmCli   *client.Client
 	logger   *log.Adapter
-	redisCli *rc.RC
-	// mqCli  *grmqx.Client
+	redisCli *repository.RC
 }
 
 func New(boot *bootstrap.Bootstrap) (*Assembly, error) {
-	// db := dbrx.New(dbx.WithMigration(boot.MigrationsDir))
 	server := grpc.DefaultServer()
-	mdmCli, err := client.Default()
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, errors.WithMessage(err, "create mdm client")
-	}
-	// mqCli := grmqx.New(boot.App.Logger())
-	// // boot.HealthcheckRegistry.Register("db", db)
-	// boot.HealthcheckRegistry.Register("mq", mqCli)
 	return &Assembly{
-		boot: boot,
-		// db:     db,
+		boot:   boot,
 		server: server,
-		mdmCli: mdmCli,
 		logger: boot.App.Logger(),
-		// mqCli:  mqCli,
 	}, nil
 }
 
@@ -60,31 +42,20 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 
 	a.logger.SetLevel(newCfg.LogLevel)
 
-	a.redisCli, err = rc.NewRC(newCfg, a.logger)
+	a.redisCli, err = repository.NewRC(newCfg, a.logger)
 	if err != nil {
 		a.logger.Fatal(ctx, errors.WithMessage(err, "error on connect to redis"))
 	}
-
-	// err = a.db.Upgrade(ctx, newCfg.Database)
-	// if err != nil {
-	// 	a.logger.Fatal(ctx, errors.WithMessage(err, "upgrade db client"))
-	// }
 
 	locator := NewLocator(a.logger, a.redisCli)
 	handler := locator.Handler()
 	a.server.Upgrade(handler)
 
-	// brokerConfig := locator.BrokerConfig(newCfg.Consumer)
-	// err = a.mqCli.Upgrade(a.boot.App.Context(), brokerConfig) // we use app context because parent context will be closed after 5sec
-	// if err != nil {
-	// 	a.logger.Fatal(ctx, errors.WithMessage(err, "upgrade mq client"))
-	// }
 	return nil
 }
 
 func (a *Assembly) Runners() []app.Runner {
 	eventHandler := cluster.NewEventHandler().
-		RequireModule("mdm", a.mdmCli).
 		RemoteConfigReceiver(a)
 	return []app.Runner{
 		app.RunnerFunc(func(ctx context.Context) error {
@@ -112,10 +83,7 @@ func (a *Assembly) Closers() []app.Closer {
 			return nil
 		}),
 		app.CloserFunc(func() error {
-			// a.mqCli.Close()
 			return nil
 		}),
-		// a.db,
-		a.mdmCli,
 	}
 }
