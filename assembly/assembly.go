@@ -82,8 +82,5 @@ func (a *Assembly) Closers() []app.Closer {
 			a.server.Shutdown()
 			return nil
 		}),
-		app.CloserFunc(func() error {
-			return nil
-		}),
 	}
 }

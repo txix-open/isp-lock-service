@@ -12,6 +12,7 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	"github.com/integration-system/isp-kit/log"
+	"github.com/pkg/errors"
 )
 
 type Locker struct {
@@ -28,9 +29,9 @@ func NewLocker(logger log.Logger, rc *RC) Locker {
 
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call repo.Lock")
-	val, err := l.rc.Lock(req.Key, req.TTLInSec*time.Second)
+	val, err := l.rc.Lock(req.Key, time.Duration(req.TTLInSec)*time.Second)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "ошибка в lock")
 	}
 	return &domain.LockResponse{LockKey: val}, nil
 }
@@ -39,8 +40,7 @@ func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.L
 	l.logger.Debug(ctx, "call repo.UnLock")
 	_, err := l.rc.UnLock(req.Key, req.LockKey)
 	if err != nil {
-		l.logger.Error(ctx, err)
-		return &domain.LockResponse{}, err
+		return &domain.LockResponse{}, errors.WithMessage(err, "ошибка в unlock")
 	}
 	return &domain.LockResponse{}, nil
 }
@@ -109,12 +109,12 @@ func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
 
 	if err := mtx.Lock(); err != nil {
-		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
 		return "", err
 	}
 
 	value := mtx.Value()
 	rc.l.Debug(context.Background(), "ключ для разблокировки "+value)
+
 	return value, nil
 }
 
@@ -130,9 +130,6 @@ func (rc *RC) UnLock(key, lockKey string) (bool, error) {
 	ok, err := rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
 
 	rc.l.Debug(context.Background(), fmt.Sprint("ok=", ok))
-	if err != nil {
-		rc.l.Debug(context.Background(), fmt.Sprintf("err=%#v", err))
-	}
 
 	return ok, err
 }

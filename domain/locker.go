@@ -1,10 +1,8 @@
 package domain
 
-import "time"
-
 type LockRequest struct {
-	Key      string        `valid:"required"`
-	TTLInSec time.Duration `valid:"required"`
+	Key      string `valid:"required"`
+	TTLInSec int    `valid:"required"`
 }
 
 type UnLockRequest struct {

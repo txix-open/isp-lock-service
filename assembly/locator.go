@@ -6,16 +6,10 @@ import (
 	"isp-lock-service/routes"
 	"isp-lock-service/service"
 
-	"github.com/integration-system/isp-kit/db"
 	"github.com/integration-system/isp-kit/grpc"
 	"github.com/integration-system/isp-kit/grpc/endpoint"
 	"github.com/integration-system/isp-kit/log"
 )
-
-type DB interface {
-	db.DB
-	db.Transactional
-}
 
 type Locator struct {
 	rc     *repository.RC
