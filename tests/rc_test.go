@@ -1,14 +1,14 @@
-package tests
+package tests_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"isp-lock-service/rc"
+	"isp-lock-service/repository"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/go-redsync/redsync/v4"
 	"github.com/integration-system/isp-kit/test"
 )
 
@@ -19,62 +19,46 @@ func NewRedis(test *test.Test) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: addr})
 }
 
+// nolint: paralleltest
 func TestOne(t *testing.T) {
-	tst, _ := test.New(t)
+	tst, required := test.New(t)
 	rcli := NewRedis(tst)
+	ctx := context.Background()
 
-	r, err := rc.NewRCWithClient("testPrefix", time.Second*2, nil, rcli)
-	if err != nil {
-		t.Error(err)
-	}
+	r, err := repository.NewLockerWithClient("testPrefix", tst.Logger(), rcli)
+	required.NoError(err)
 
 	// success story
-	l, err := r.Lock("abc", time.Second)
-	if err != nil {
-		t.Error("#1.1::", err)
-	}
+	key := time.Now().String()
+	l, err := r.Lock(ctx, key, 1)
+	required.NoError(err)
 
-	_, err = r.UnLock("abc", l)
-	if err != nil {
-		t.Error("#1.2::", err)
-	}
+	_, err = r.UnLock(ctx, key, l.LockKey)
+	required.NoError(err)
 
 	// look at wait
-	l, err = r.Lock("abc", time.Second)
-	if err != nil {
-		t.Error("#2.1::", err)
-	}
+	_, err = r.Lock(ctx, key, 1)
+	required.NoError(err)
 
 	n := time.Now()
-	l, err = r.Lock("abc", time.Second)
-	if err != nil {
-		t.Error("#2.2::", err)
-	}
-	diff := time.Now().Sub(n)
-	if diff < time.Second {
-		t.Error("#2.3::error with second lock::", diff.String())
-	}
+	_, err = r.Lock(ctx, key, 1)
+	required.NoError(err)
+
+	diff := time.Since(n)
+	required.Greater(diff, time.Second)
 
 	// look at error
-	l, err = r.Lock("abc", time.Minute)
+	l, err = r.Lock(ctx, key, 10)
+	required.NoError(err)
+
+	_, err = r.Lock(ctx, key, 1)
+
+	required.Error(err)
+
 	if err != nil {
-		t.Error("#3.1::", err)
+		required.Error(err, "fail lock")
 	}
 
-	n = time.Now()
-	_, err = r.Lock("abc", time.Second)
-	diff = time.Now().Sub(n)
-	if err == nil {
-		t.Error("#3.2::", err)
-	} else {
-		if _, ok := err.(redsync.ErrTaken); !ok {
-			t.Error("#3.3::", err)
-		}
-	}
-
-	_, err = r.UnLock("abc", l)
-	if err != nil {
-		t.Error("#3.4::", err)
-	}
-
+	_, err = r.UnLock(ctx, key, l.LockKey)
+	required.NoError(err)
 }

@@ -21,9 +21,9 @@ type Locker struct {
 // Lock
 // @Tags locker
 // @Summary выставляем лок на строку
-// @Description `key` - строка для лока
-// @Description `ttl` - число секунд после которых блокировка снимется автоматически
 // @Description Возвращаем ключ для разблокировки
+// @Param key query string true "строка для лока"
+// @Param ttlInSec query int true "число секунд после которых блокировка снимется автоматически"
 // @Accept json
 // @Produce json
 // @Success 200 {object} domain.LockResponse
@@ -36,8 +36,8 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 // UnLock
 // @Tags locker
 // @Summary снимаем лок со строки
-// @Description `key` - строка для лока
-// @Description `locKKey` - ключ для разблокировки, полученный из Lock
+// @Param key query string true "строка для лока"
+// @Param lockKey query string true "ключ для разблокировки, полученный из Lock"
 // @Accept json
 // @Produce json
 // @Success 200
@@ -53,16 +53,3 @@ func NewLocker(logger log.Logger, s LockerService) Locker {
 		logger: logger,
 	}
 }
-
-// All
-// @Tags object
-// @Summary Получить все объекты
-// @Description Возвращает список объектов
-// @Accept json
-// @Produce json
-// @Success 200 {array} domain.Locker
-// @Failure 500 {object} domain.GrpcError
-// @Router /object/all [POST]
-// func (c Locker) All(ctx context.Context) ([]domain.Locker, error) {
-// 	return c.s.All(ctx)
-// }

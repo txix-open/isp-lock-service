@@ -9,8 +9,8 @@ import (
 )
 
 type LockerRepo interface {
-	Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error)
-	UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error)
+	Lock(ctx context.Context, key string, ttlInSec int) (*domain.LockResponse, error)
+	UnLock(ctx context.Context, key, lockKey string) (*domain.LockResponse, error)
 }
 
 type Locker struct {
@@ -20,12 +20,14 @@ type Locker struct {
 
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call srv.Lock")
-	return l.repo.Lock(ctx, req)
+	// nolint: wrapcheck
+	return l.repo.Lock(ctx, req.Key, req.TTLInSec)
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call srv.UnLock")
-	return l.repo.UnLock(ctx, req)
+	// nolint: wrapcheck
+	return l.repo.UnLock(ctx, req.Key, req.LockKey)
 }
 
 func NewLocker(logger log.Logger, repo LockerRepo) Locker {
@@ -34,30 +36,3 @@ func NewLocker(logger log.Logger, repo LockerRepo) Locker {
 		logger: logger,
 	}
 }
-
-// func (s Locker) All(ctx context.Context) ([]domain.Locker, error) {
-// 	objects, err := s.repo.All(ctx)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "get all objects")
-// 	}
-// 	result := make([]domain.Locker, 0, len(objects))
-// 	for _, object := range objects {
-// 		d := domain.Locker{
-// 			Name: object.Name,
-// 		}
-// 		result = append(result, d)
-// 	}
-// 	return result, nil
-// }
-//
-// func (s Locker) Get(ctx context.Context, id int) (*domain.Locker, error) {
-// 	object, err := s.repo.Get(ctx, id)
-// 	if err != nil {
-// 		return nil, errors.WithMessagef(err, "get object by id %d", id)
-// 	}
-// 	d := domain.Locker{
-// 		Name: object.Name,
-// 	}
-// 	return &d, nil
-// }
-//

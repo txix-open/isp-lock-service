@@ -2,10 +2,11 @@
 POST http://{{address}}/api/isp-lock-service/lock
 Content-Type: application/json
 X-Application-Token: {{token}}
+x-auth-admin: {{admin-token}}
 
 {
     "key": "abc",
-    "ttl": 20
+    "ttlInSec": 15
 }
 > {%
     client.global.set("lockKey", response.body.lockKey);
@@ -15,6 +16,7 @@ X-Application-Token: {{token}}
 POST http://{{address}}/api/isp-lock-service/unlock
 Content-Type: application/json
 X-Application-Token: {{token}}
+x-auth-admin: {{admin-token}}
 
 {
     "key": "abc",

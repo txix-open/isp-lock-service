@@ -2,7 +2,6 @@ package conf
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/integration-system/isp-kit/log"
 	"github.com/integration-system/isp-kit/rc/schema"
@@ -17,30 +16,24 @@ func init() {
 	})
 }
 
-//	type Remote struct {
-//		// Database dbx.Config
-//		// Consumer Consumer
-//		LogLevel log.Level `schemaGen:"logLevel" schema:"Уровень логирования"`
-//	}
 type Remote struct {
-	LogLevel log.Level `schemaGen:"logLevel"  schema:"Уровень логирования"`
-	Redis    struct {
-		Server         string        `schemaGen:"server"  schema:"Адрес сервера redis, обязателен, если sentinel не указан"`
-		UserName       string        `schemaGen:"userName"  schema:"Имя пользователя в  redis"`
-		Password       string        `schemaGen:"password"  schema:"Пароль для redis"`
-		DB             int           `schemaGen:"db"  schema:"номер БД в redis"`
-		Prefix         string        `schemaGen:"prefix"  schema:"Префикс ключей для модуля"`
-		DefaultTimeOut time.Duration `schemaGen:"defaultTimeOut"  schema:"TTL по умолчанию, в секундах"`
-		RedisSentinel  *struct {
-			Addresses  []string `schema:"Адреса нод в кластере"`
-			MasterName string   `schema:"Имя мастера"`
-			Username   string   `schema:"Имя пользователя в sentinel"`
-			Password   string   `schema:"Пароль в sentinel"`
-		} `schema:"Настройки sentinel,обязательна, если redis.server не указан"`
-	} `schemaGen:"redis"  schema:"Настройки redis"`
+	LogLevel log.Level `schemaGen:"logLevel" schema:"Уровень логирования"`
+	Redis    Redis     `schema:"Настройки redis"`
 }
 
-// type Consumer struct {
-// 	Client grmqx.Connection
-// 	Config grmqx.Consumer
-// }
+type Redis struct {
+	Address  string         `schema:"Адрес,обязательное, если sentinel не указан"`
+	Username string         `schema:"Имя пользователя"`
+	Password string         `schema:"Пароль"`
+	Sentinel *RedisSentinel `schema:"Настройки sentinel,обязательно, если address не указан"`
+
+	DB     int    `schema:"номер БД в redis"`
+	Prefix string `schema:"Префикс ключей для модуля"`
+}
+
+type RedisSentinel struct {
+	Addresses  []string `valid:"required" schema:"Адреса нод в кластере"`
+	MasterName string   `valid:"required" schema:"Имя мастера"`
+	Username   string   `schema:"Имя пользователя в sentinel"`
+	Password   string   `schema:"Пароль в sentinel"`
+}

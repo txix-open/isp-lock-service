@@ -18,10 +18,18 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        `key` - строка для лока
-        `ttl` - число секунд после которых блокировка снимется автоматически
-        Возвращаем ключ для разблокировки
+      description: Возвращаем ключ для разблокировки
+      parameters:
+      - description: строка для лока
+        in: query
+        name: key
+        required: true
+        type: string
+      - description: число секунд после которых блокировка снимется автоматически
+        in: query
+        name: ttlInSec
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -36,9 +44,17 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        `key` - строка для лока
-        `locKKey` - ключ для разблокировки, полученный из Lock
+      parameters:
+      - description: строка для лока
+        in: query
+        name: key
+        required: true
+        type: string
+      - description: ключ для разблокировки, полученный из Lock
+        in: query
+        name: lockKey
+        required: true
+        type: string
       produces:
       - application/json
       responses:
