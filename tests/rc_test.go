@@ -1,4 +1,4 @@
-package tests
+package tests_test
 
 import (
 	"fmt"
@@ -19,6 +19,7 @@ func NewRedis(test *test.Test) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: addr})
 }
 
+// nolint: paralleltest
 func TestOne(t *testing.T) {
 	tst, required := test.New(t)
 	rcli := NewRedis(tst)
@@ -27,42 +28,43 @@ func TestOne(t *testing.T) {
 	required.NoError(err)
 
 	// success story
-	l, err := r.Lock("abc", time.Second)
+	key := time.Now().String()
+	l, err := r.Lock(key, time.Second)
 	required.NoError(err)
 
-	_, err = r.UnLock("abc", l)
+	_, err = r.UnLock(key, l)
 	required.NoError(err)
 
 	// look at wait
-	l, err = r.Lock("abc", time.Second)
+	_, err = r.Lock(key, time.Second)
 	required.NoError(err)
 
 	n := time.Now()
-	l, err = r.Lock("abc", time.Second)
+	_, err = r.Lock(key, time.Second)
 	required.NoError(err)
 
-	diff := time.Now().Sub(n)
+	diff := time.Since(n)
 	if diff < time.Second {
 		t.Error("#2.3::error with second lock::", diff.String())
 	}
 
 	// look at error
-	l, err = r.Lock("abc", 10*time.Second)
+	l, err = r.Lock(key, 10*time.Second)
 	required.NoError(err)
 
 	n = time.Now()
-	_, err = r.Lock("abc", time.Second)
-	diff = time.Now().Sub(n)
+	_, err = r.Lock(key, time.Second)
+	// diff = time.Since(n)
 
 	required.Error(err)
 
 	if err != nil {
+		// nolint: errorlint
 		if _, ok := err.(redsync.ErrTaken); !ok {
 			t.Error("#3.3::", err)
 		}
 	}
 
-	_, err = r.UnLock("abc", l)
+	_, err = r.UnLock(key, l)
 	required.NoError(err)
-
 }

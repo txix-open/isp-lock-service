@@ -11,5 +11,6 @@ type UnLockRequest struct {
 }
 
 type LockResponse struct {
+	// nolint: tagliatelle
 	LockKey string `json:",omitempty"`
 }
