@@ -2,7 +2,6 @@ package conf
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/integration-system/isp-kit/log"
 	"github.com/integration-system/isp-kit/rc/schema"
@@ -18,9 +17,8 @@ func init() {
 }
 
 type Remote struct {
-	LogLevel            log.Level     `schemaGen:"logLevel" schema:"Уровень логирования"`
-	Redis               Redis         `schema:"Настройки redis"`
-	DefaultTimeOutInSec time.Duration `schema:"TTLInSec по умолчанию, в секундах"`
+	LogLevel log.Level `schemaGen:"logLevel" schema:"Уровень логирования"`
+	Redis    Redis     `schema:"Настройки redis"`
 }
 
 type Redis struct {

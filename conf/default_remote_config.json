@@ -1,6 +1,5 @@
 {
     "logLevel": "debug",
-    "defaultTimeOutInSec": 10,
     "redis": {
         "address": "localhost:6379",
         "password": "",
