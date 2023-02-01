@@ -111,7 +111,6 @@ func (rc *Locker) RCUnLock(key, lockKey string) (bool, error) {
 }
 
 func NewLockerWithClient(prefix string, l log.Logger, cli *goredislib.Client) (*Locker, error) {
-
 	rc := redsync.New(goredis.NewPool(cli))
 
 	return &Locker{
