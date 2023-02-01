@@ -24,23 +24,23 @@ func TestOne(t *testing.T) {
 	tst, required := test.New(t)
 	rcli := NewRedis(tst)
 
-	r, err := repository.NewRCWithClient("testPrefix", tst.Logger(), rcli)
+	r, err := repository.NewLockerWithClient("testPrefix", tst.Logger(), rcli)
 	required.NoError(err)
 
 	// success story
 	key := time.Now().String()
-	l, err := r.Lock(key, time.Second)
+	l, err := r.RCLock(key, time.Second)
 	required.NoError(err)
 
-	_, err = r.UnLock(key, l)
+	_, err = r.RCUnLock(key, l)
 	required.NoError(err)
 
 	// look at wait
-	_, err = r.Lock(key, time.Second)
+	_, err = r.RCLock(key, time.Second)
 	required.NoError(err)
 
 	n := time.Now()
-	_, err = r.Lock(key, time.Second)
+	_, err = r.RCLock(key, time.Second)
 	required.NoError(err)
 
 	diff := time.Since(n)
@@ -49,10 +49,10 @@ func TestOne(t *testing.T) {
 	}
 
 	// look at error
-	l, err = r.Lock(key, 10*time.Second)
+	l, err = r.RCLock(key, 10*time.Second)
 	required.NoError(err)
 
-	_, err = r.Lock(key, time.Second)
+	_, err = r.RCLock(key, time.Second)
 
 	required.Error(err)
 
@@ -63,6 +63,6 @@ func TestOne(t *testing.T) {
 		}
 	}
 
-	_, err = r.UnLock(key, l)
+	_, err = r.RCUnLock(key, l)
 	required.NoError(err)
 }

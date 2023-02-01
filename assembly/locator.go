@@ -1,6 +1,7 @@
 package assembly
 
 import (
+	"isp-lock-service/conf"
 	"isp-lock-service/controller"
 	"isp-lock-service/repository"
 	"isp-lock-service/routes"
@@ -12,19 +13,19 @@ import (
 )
 
 type Locator struct {
-	rc     *repository.RC
+	cfg    conf.Remote
 	logger log.Logger
 }
 
-func NewLocator(logger log.Logger, rc *repository.RC) Locator {
+func NewLocator(logger log.Logger, cfg conf.Remote) Locator {
 	return Locator{
-		rc:     rc,
+		cfg:    cfg,
 		logger: logger,
 	}
 }
 
 func (l Locator) Handler() *grpc.Mux {
-	lockRepo := repository.NewLocker(l.logger, l.rc)
+	lockRepo := repository.NewLocker(l.logger, l.cfg)
 	lockerService := service.NewLocker(l.logger, lockRepo)
 	lockerController := controller.NewLocker(l.logger, lockerService)
 	c := routes.Controllers{

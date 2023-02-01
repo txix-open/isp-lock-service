@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"isp-lock-service/conf"
-	"isp-lock-service/repository"
 
 	"github.com/integration-system/isp-kit/app"
 	"github.com/integration-system/isp-kit/bootstrap"
@@ -15,10 +14,9 @@ import (
 )
 
 type Assembly struct {
-	boot     *bootstrap.Bootstrap
-	server   *grpc.Server
-	logger   *log.Adapter
-	redisCli *repository.RC
+	boot   *bootstrap.Bootstrap
+	server *grpc.Server
+	logger *log.Adapter
 }
 
 func New(boot *bootstrap.Bootstrap) (*Assembly, error) {
@@ -42,12 +40,12 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 
 	a.logger.SetLevel(newCfg.LogLevel)
 
-	a.redisCli, err = repository.NewRC(newCfg, a.logger)
-	if err != nil {
-		a.logger.Fatal(ctx, errors.WithMessage(err, "error on connect to redis"))
-	}
+	// a.redisCli, err = repository.NewRC(newCfg, a.logger)
+	// if err != nil {
+	// 	a.logger.Fatal(ctx, errors.WithMessage(err, "error on connect to redis"))
+	// }
 
-	locator := NewLocator(a.logger, a.redisCli)
+	locator := NewLocator(a.logger, newCfg)
 	handler := locator.Handler()
 	a.server.Upgrade(handler)
 
