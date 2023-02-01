@@ -65,4 +65,3 @@ X-Application-Token: {{token}}
 {
 }
 ```
-
