@@ -52,9 +52,7 @@ func TestOne(t *testing.T) {
 	l, err = r.Lock(key, 10*time.Second)
 	required.NoError(err)
 
-	n = time.Now()
 	_, err = r.Lock(key, time.Second)
-	// diff = time.Since(n)
 
 	required.Error(err)
 

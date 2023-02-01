@@ -109,6 +109,7 @@ func (rc *RC) Lock(key string, ttl time.Duration) (string, error) {
 	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
 
 	if err := mtx.Lock(); err != nil {
+		// nolint: wrapcheck
 		return "", err
 	}
 
@@ -131,5 +132,6 @@ func (rc *RC) UnLock(key, lockKey string) (bool, error) {
 
 	rc.l.Debug(context.Background(), fmt.Sprint("ok=", ok))
 
+	// nolint: wrapcheck
 	return ok, err
 }
