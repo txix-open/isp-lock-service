@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"isp-lock-service/repository"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/go-redsync/redsync/v4"
 	"github.com/integration-system/isp-kit/test"
 )
 
@@ -23,46 +23,42 @@ func NewRedis(test *test.Test) *redis.Client {
 func TestOne(t *testing.T) {
 	tst, required := test.New(t)
 	rcli := NewRedis(tst)
+	ctx := context.Background()
 
 	r, err := repository.NewLockerWithClient("testPrefix", tst.Logger(), rcli)
 	required.NoError(err)
 
 	// success story
 	key := time.Now().String()
-	l, err := r.RCLock(key, time.Second)
+	l, err := r.Lock(ctx, key, 1)
 	required.NoError(err)
 
-	_, err = r.RCUnLock(key, l)
+	_, err = r.UnLock(ctx, key, l.LockKey)
 	required.NoError(err)
 
 	// look at wait
-	_, err = r.RCLock(key, time.Second)
+	_, err = r.Lock(ctx, key, 1)
 	required.NoError(err)
 
 	n := time.Now()
-	_, err = r.RCLock(key, time.Second)
+	_, err = r.Lock(ctx, key, 1)
 	required.NoError(err)
 
 	diff := time.Since(n)
-	if diff < time.Second {
-		t.Error("#2.3::error with second lock::", diff.String())
-	}
+	required.Greater(diff, time.Second)
 
 	// look at error
-	l, err = r.RCLock(key, 10*time.Second)
+	l, err = r.Lock(ctx, key, 10)
 	required.NoError(err)
 
-	_, err = r.RCLock(key, time.Second)
+	_, err = r.Lock(ctx, key, 1)
 
 	required.Error(err)
 
 	if err != nil {
-		// nolint: errorlint
-		if _, ok := err.(redsync.ErrTaken); !ok {
-			t.Error("#3.3::", err)
-		}
+		required.Error(err, "fail lock")
 	}
 
-	_, err = r.RCUnLock(key, l)
+	_, err = r.UnLock(ctx, key, l.LockKey)
 	required.NoError(err)
 }

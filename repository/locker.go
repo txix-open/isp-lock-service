@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"isp-lock-service/conf"
@@ -47,67 +48,45 @@ func NewLocker(logger log.Logger, cfg conf.Remote) Locker {
 	}
 }
 
-func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
+func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call repo.Lock")
-	val, err := l.RCLock(req.Key, time.Duration(req.TTLInSec)*time.Second)
-	if err != nil {
-		return nil, errors.WithMessage(err, "ошибка в lock")
+
+	key = makeKey(l.prefix, key)
+
+	l.logger.Debug(context.Background(), "пробуем залочить "+key+" на "+strconv.Itoa(ttl)+" сек.")
+
+	mtx := l.cli.NewMutex(key, redsync.WithExpiry(time.Duration(ttl)*time.Second))
+
+	if err := mtx.Lock(); err != nil {
+		return nil, errors.WithMessagef(err, "fail lock. key=%s", key)
 	}
-	return &domain.LockResponse{LockKey: val}, nil
+
+	value := mtx.Value()
+	l.logger.Debug(context.Background(), "ключ для разблокировки "+value)
+
+	return &domain.LockResponse{LockKey: value}, nil
 }
 
-func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
+func (l Locker) UnLock(ctx context.Context, key, lockKey string) (*domain.LockResponse, error) {
 	l.logger.Debug(ctx, "call repo.UnLock")
-	_, err := l.RCUnLock(req.Key, req.LockKey)
+
+	key = makeKey(l.prefix, key)
+
+	l.logger.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
+
+	ok, err := l.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
+
+	l.logger.Debug(context.Background(), fmt.Sprint("ok=", ok))
+
 	if err != nil {
-		return &domain.LockResponse{}, errors.WithMessage(err, "ошибка в unlock")
+		return nil, errors.WithMessagef(err, "fail unlock. key=%s", key)
 	}
+
 	return &domain.LockResponse{}, nil
 }
 
 func makeKey(prefix, key string) string {
 	return prefix + "::" + key
-}
-
-// RCLock - функция установки лока по ключу
-//
-//	key - суффикс ключа
-//	ttl - время жизни ключа
-//
-//	Возвращает ключ для разблокировки
-func (rc *Locker) RCLock(key string, ttl time.Duration) (string, error) {
-	key = makeKey(rc.prefix, key)
-
-	rc.logger.Debug(context.Background(), "пробуем залочить "+key+" на "+ttl.String())
-
-	mtx := rc.cli.NewMutex(key, redsync.WithExpiry(ttl))
-
-	if err := mtx.Lock(); err != nil {
-		// nolint: wrapcheck
-		return "", err
-	}
-
-	value := mtx.Value()
-	rc.logger.Debug(context.Background(), "ключ для разблокировки "+value)
-
-	return value, nil
-}
-
-// RCUnLock - функция снятия лока по ключу
-//
-//	key - суффикс ключа
-//	lockKey - ключ, полученный в ответе из функции Lock
-func (rc *Locker) RCUnLock(key, lockKey string) (bool, error) {
-	key = makeKey(rc.prefix, key)
-
-	rc.logger.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
-
-	ok, err := rc.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
-
-	rc.logger.Debug(context.Background(), fmt.Sprint("ok=", ok))
-
-	// nolint: wrapcheck
-	return ok, err
 }
 
 func NewLockerWithClient(prefix string, l log.Logger, cli *goredislib.Client) (*Locker, error) {
