@@ -27,7 +27,7 @@ func NewLocker(logger log.Logger, cfg conf.Remote) Locker {
 		Addr:     cfg.Redis.Address,
 		Username: cfg.Redis.Username,
 		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
+		DB:       cfg.Redis.Db,
 	})
 
 	if cfg.Redis.Sentinel != nil {

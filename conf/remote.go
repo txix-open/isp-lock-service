@@ -27,7 +27,7 @@ type Redis struct {
 	Password string         `schema:"Пароль"`
 	Sentinel *RedisSentinel `schema:"Настройки sentinel,обязательно, если address не указан"`
 
-	DB     int    `schema:"номер БД в redis"`
+	Db     int    `schema:"номер БД в redis"`
 	Prefix string `schema:"Префикс ключей для модуля"`
 }
 
