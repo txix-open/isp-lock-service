@@ -47,8 +47,6 @@ func NewLocker(logger log.Logger, cfg conf.Remote) Locker {
 }
 
 func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call repo.Lock")
-
 	key = makeKey(l.prefix, key)
 
 	mtx := l.cli.NewMutex(key, redsync.WithExpiry(time.Duration(ttl)*time.Second))
@@ -63,8 +61,6 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 }
 
 func (l Locker) UnLock(ctx context.Context, key, lockKey string) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call repo.UnLock")
-
 	key = makeKey(l.prefix, key)
 
 	_, err := l.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()

@@ -29,7 +29,6 @@ type Locker struct {
 // @Success 200 {object} domain.LockResponse
 // @Router /api/isp-lock-service/lock [POST]
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call ctrl.Lock")
 	return l.s.Lock(ctx, req)
 }
 
@@ -43,7 +42,6 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 // @Success 200
 // @Router /api/isp-lock-service/unlock [POST]
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call ctrl.UnLock")
 	return l.s.UnLock(ctx, req)
 }
 

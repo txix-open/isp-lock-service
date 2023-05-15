@@ -19,13 +19,11 @@ type Locker struct {
 }
 
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call srv.Lock")
 	// nolint: wrapcheck
 	return l.repo.Lock(ctx, req.Key, req.TTLInSec)
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
-	l.logger.Debug(ctx, "call srv.UnLock")
 	// nolint: wrapcheck
 	return l.repo.UnLock(ctx, req.Key, req.LockKey)
 }
