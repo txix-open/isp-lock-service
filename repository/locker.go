@@ -2,8 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"isp-lock-service/conf"
@@ -53,8 +51,6 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 
 	key = makeKey(l.prefix, key)
 
-	l.logger.Debug(context.Background(), "пробуем залочить "+key+" на "+strconv.Itoa(ttl)+" сек.")
-
 	mtx := l.cli.NewMutex(key, redsync.WithExpiry(time.Duration(ttl)*time.Second))
 
 	if err := mtx.Lock(); err != nil {
@@ -62,7 +58,6 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 	}
 
 	value := mtx.Value()
-	l.logger.Debug(context.Background(), "ключ для разблокировки "+value)
 
 	return &domain.LockResponse{LockKey: value}, nil
 }
@@ -72,12 +67,7 @@ func (l Locker) UnLock(ctx context.Context, key, lockKey string) (*domain.LockRe
 
 	key = makeKey(l.prefix, key)
 
-	l.logger.Debug(context.Background(), "пробуем разлочить "+key+"+"+lockKey)
-
-	ok, err := l.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
-
-	l.logger.Debug(context.Background(), fmt.Sprint("ok=", ok))
-
+	_, err := l.cli.NewMutex(key, redsync.WithValue(lockKey)).Unlock()
 	if err != nil {
 		return nil, errors.WithMessagef(err, "fail unlock. key=%s", key)
 	}
