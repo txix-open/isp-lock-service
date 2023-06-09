@@ -7,11 +7,11 @@ import (
 	"isp-lock-service/conf"
 	"isp-lock-service/domain"
 
-	goredislib "github.com/go-redis/redis/v8"
 	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/integration-system/isp-kit/log"
 	"github.com/pkg/errors"
+	goredislib "github.com/redis/go-redis/v9"
 )
 
 type Locker struct {
