@@ -3,6 +3,7 @@ package assembly
 import (
 	"context"
 
+	"github.com/integration-system/isp-kit/observability/sentry"
 	"isp-lock-service/conf"
 
 	"github.com/integration-system/isp-kit/app"
@@ -35,17 +36,13 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 	)
 	err := a.boot.RemoteConfig.Upgrade(remoteConfig, &newCfg, &prevCfg)
 	if err != nil {
-		a.logger.Fatal(ctx, errors.WithMessage(err, "upgrade remote config"))
+		a.boot.Fatal(errors.WithMessage(err, "upgrade remote config"))
 	}
 
 	a.logger.SetLevel(newCfg.LogLevel)
 
-	// a.redisCli, err = repository.NewRC(newCfg, a.logger)
-	// if err != nil {
-	// 	a.logger.Fatal(ctx, errors.WithMessage(err, "error on connect to redis"))
-	// }
-
-	locator := NewLocator(a.logger, newCfg)
+	logger := sentry.WrapErrorLogger(a.logger, a.boot.SentryHub)
+	locator := NewLocator(logger, newCfg)
 	handler := locator.Handler()
 	a.server.Upgrade(handler)
 
