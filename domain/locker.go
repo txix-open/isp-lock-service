@@ -1,13 +1,13 @@
 package domain
 
 type LockRequest struct {
-	Key      string `valid:"required"`
-	TTLInSec int    `valid:"required"`
+	Key      string `validate:"required"`
+	TTLInSec int    `validate:"required"`
 }
 
 type UnLockRequest struct {
-	Key     string `valid:"required"`
-	LockKey string `valid:"required"`
+	Key     string `validate:"required"`
+	LockKey string `validate:"required"`
 }
 
 type LockResponse struct {
