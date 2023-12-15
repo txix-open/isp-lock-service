@@ -10,9 +10,9 @@ import (
 
 // nolint: gochecknoinits
 func init() {
-	schema.CustomGenerators.Register("logLevel", func(field reflect.StructField, t *jsonschema.Type) {
-		t.Type = "string"
-		t.Enum = []any{"debug", "info", "error", "fatal"}
+	schema.CustomGenerators.Register("logLevel", func(field reflect.StructField, s *jsonschema.Schema) {
+		s.Type = "string"
+		s.Enum = []any{"debug", "info", "error", "fatal"}
 	})
 }
 
@@ -32,8 +32,8 @@ type Redis struct {
 }
 
 type RedisSentinel struct {
-	Addresses  []string `valid:"required" schema:"Адреса нод в кластере"`
-	MasterName string   `valid:"required" schema:"Имя мастера"`
+	Addresses  []string `validate:"required" schema:"Адреса нод в кластере"`
+	MasterName string   `validate:"required" schema:"Имя мастера"`
 	Username   string   `schema:"Имя пользователя в sentinel"`
 	Password   string   `schema:"Пароль в sentinel"`
 }
