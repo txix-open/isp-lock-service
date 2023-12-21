@@ -1,9 +1,9 @@
 {
-    "logLevel": "debug",
-    "redis": {
-        "address": "localhost:6379",
-        "password": "",
-        "db": 0,
-        "prefix": "isp-lock-service"
-    }
+  "logLevel": "debug",
+  "redis": {
+    "address": "{{ msp_redis_address }}:{{ msp_redis_port }}",
+    "password": "",
+    "db": 0,
+    "prefix": "isp-lock-service"
+  }
 }
