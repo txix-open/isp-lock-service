@@ -1,15 +1,16 @@
 package routes
 
 import (
-	"github.com/integration-system/isp-kit/cluster"
-	"github.com/integration-system/isp-kit/grpc"
-	"github.com/integration-system/isp-kit/grpc/endpoint"
+	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/grpc"
+	"github.com/txix-open/isp-kit/grpc/endpoint"
 
 	"isp-lock-service/controller"
 )
 
 type Controllers struct {
-	Locker controller.Locker
+	Locker      controller.Locker
+	RateLimiter controller.RateLimiter
 }
 
 func EndpointDescriptors() []cluster.EndpointDescriptor {
@@ -35,5 +36,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.Locker.UnLock,
+	}, {
+		Path:             "isp-lock-service/rate_limit",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.RateLimiter.Limit,
 	}}
 }

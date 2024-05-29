@@ -1,10 +1,11 @@
 package conf_test
 
 import (
-	"isp-lock-service/conf"
 	"testing"
 
-	"github.com/integration-system/isp-kit/test/rct"
+	"isp-lock-service/conf"
+
+	"github.com/txix-open/isp-kit/test/rct"
 )
 
 func TestDefaultRemoteConfig(t *testing.T) {

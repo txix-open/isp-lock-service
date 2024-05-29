@@ -3,46 +3,51 @@ package assembly
 import (
 	"context"
 
-	"github.com/integration-system/isp-kit/observability/sentry"
+	goredislib "github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/observability/sentry"
+	"github.com/txix-open/isp-kit/rc"
 	"isp-lock-service/conf"
 
-	"github.com/integration-system/isp-kit/app"
-	"github.com/integration-system/isp-kit/bootstrap"
-	"github.com/integration-system/isp-kit/cluster"
-	"github.com/integration-system/isp-kit/grpc"
-	"github.com/integration-system/isp-kit/log"
 	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/app"
+	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/grpc"
+	"github.com/txix-open/isp-kit/log"
 )
 
 type Assembly struct {
-	boot   *bootstrap.Bootstrap
-	server *grpc.Server
-	logger *log.Adapter
+	boot     *bootstrap.Bootstrap
+	server   *grpc.Server
+	redisCli *goredislib.Client
+	logger   *log.Adapter
 }
 
 func New(boot *bootstrap.Bootstrap) (*Assembly, error) {
 	server := grpc.DefaultServer()
 	return &Assembly{
-		boot:   boot,
-		server: server,
-		logger: boot.App.Logger(),
+		boot:     boot,
+		server:   server,
+		redisCli: nil,
+		logger:   boot.App.Logger(),
 	}, nil
 }
 
 func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error {
-	var (
-		newCfg  conf.Remote
-		prevCfg conf.Remote
-	)
-	err := a.boot.RemoteConfig.Upgrade(remoteConfig, &newCfg, &prevCfg)
+	newCfg, _, err := rc.Upgrade[conf.Remote](a.boot.RemoteConfig, remoteConfig)
 	if err != nil {
 		a.boot.Fatal(errors.WithMessage(err, "upgrade remote config"))
+	}
+
+	err = a.redisClient(newCfg.Redis)
+	if err != nil {
+		a.boot.Fatal(errors.WithMessage(err, "upgrade redis client"))
 	}
 
 	a.logger.SetLevel(newCfg.LogLevel)
 
 	logger := sentry.WrapErrorLogger(a.logger, a.boot.SentryHub)
-	locator := NewLocator(logger, newCfg)
+	locator := NewLocator(logger, a.redisCli, newCfg)
 	handler := locator.Handler()
 	a.server.Upgrade(handler)
 
@@ -77,5 +82,47 @@ func (a *Assembly) Closers() []app.Closer {
 			a.server.Shutdown()
 			return nil
 		}),
+		app.CloserFunc(func() error {
+			_ = a.redisCli.Close()
+			return nil
+		}),
 	}
+}
+
+func (a *Assembly) redisClient(cfg conf.Redis) error {
+	var (
+		oldCli = a.redisCli
+		newCli *goredislib.Client
+	)
+	if cfg.Sentinel != nil {
+		newCli = goredislib.NewFailoverClient(&goredislib.FailoverOptions{
+			MasterName:       cfg.Sentinel.MasterName,
+			SentinelAddrs:    cfg.Sentinel.Addresses,
+			SentinelUsername: cfg.Sentinel.Username,
+			SentinelPassword: cfg.Sentinel.Password,
+			Password:         cfg.Password,
+			Username:         cfg.Username,
+		})
+	} else {
+		newCli = goredislib.NewClient(&goredislib.Options{
+			Addr:     cfg.Address,
+			Username: cfg.Username,
+			Password: cfg.Password,
+			DB:       cfg.Db,
+		})
+	}
+
+	err := newCli.Ping(a.boot.App.Context()).Err()
+	if err != nil {
+		return errors.WithMessage(err, "ping new redis client")
+	}
+	a.redisCli = newCli
+
+	if oldCli != nil {
+		err := oldCli.Close()
+		if err != nil {
+			return errors.WithMessage(err, "close old redis client")
+		}
+	}
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 
 	"isp-lock-service/domain"
 
-	"github.com/integration-system/isp-kit/log"
+	"github.com/txix-open/isp-kit/log"
 )
 
 type LockerRepo interface {
