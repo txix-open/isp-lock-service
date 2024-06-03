@@ -1,0 +1,66 @@
+basePath: /api/isp-lock-service
+definitions:
+  domain.LockResponse:
+    properties:
+      lockKey:
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact: {}
+  description: Шаблон сервиса
+  license:
+    name: GNU GPL v3.0
+  title: isp-lock-service
+  version: 1.0.0
+paths:
+  /api/isp-lock-service/lock:
+    post:
+      consumes:
+      - application/json
+      description: Возвращаем ключ для разблокировки
+      parameters:
+      - description: строка для лока
+        in: query
+        name: key
+        required: true
+        type: string
+      - description: число секунд после которых блокировка снимется автоматически
+        in: query
+        name: ttlInSec
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.LockResponse'
+      summary: выставляем лок на строку
+      tags:
+      - locker
+  /api/isp-lock-service/unlock:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: строка для лока
+        in: query
+        name: key
+        required: true
+        type: string
+      - description: ключ для разблокировки, полученный из Lock
+        in: query
+        name: lockKey
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: снимаем лок со строки
+      tags:
+      - locker
+swagger: "2.0"
