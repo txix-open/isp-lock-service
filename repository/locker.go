@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"isp-lock-service/conf"
 	"isp-lock-service/domain"
 
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
-	"github.com/integration-system/isp-kit/log"
 	"github.com/pkg/errors"
 	goredislib "github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/log"
 )
 
 type Locker struct {
@@ -20,29 +20,11 @@ type Locker struct {
 	prefix string
 }
 
-func NewLocker(logger log.Logger, cfg conf.Remote) Locker {
-	cli := goredislib.NewClient(&goredislib.Options{
-		Addr:     cfg.Redis.Address,
-		Username: cfg.Redis.Username,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.Db,
-	})
-
-	if cfg.Redis.Sentinel != nil {
-		cli = goredislib.NewFailoverClient(&goredislib.FailoverOptions{
-			MasterName:       cfg.Redis.Sentinel.MasterName,
-			SentinelAddrs:    cfg.Redis.Sentinel.Addresses,
-			SentinelUsername: cfg.Redis.Sentinel.Username,
-			SentinelPassword: cfg.Redis.Sentinel.Password,
-			Password:         cfg.Redis.Password,
-			Username:         cfg.Redis.Username,
-		})
-	}
-
+func NewLocker(logger log.Logger, cli goredislib.UniversalClient, cfg conf.Redis) Locker {
 	return Locker{
 		logger: logger,
 		cli:    redsync.New(goredis.NewPool(cli)),
-		prefix: cfg.Redis.Prefix,
+		prefix: cfg.Prefix,
 	}
 }
 
@@ -73,14 +55,4 @@ func (l Locker) UnLock(ctx context.Context, key, lockKey string) (*domain.LockRe
 
 func makeKey(prefix, key string) string {
 	return prefix + "::" + key
-}
-
-func NewLockerWithClient(prefix string, l log.Logger, cli *goredislib.Client) (*Locker, error) {
-	rc := redsync.New(goredis.NewPool(cli))
-
-	return &Locker{
-		logger: l,
-		cli:    rc,
-		prefix: prefix,
-	}, nil
 }

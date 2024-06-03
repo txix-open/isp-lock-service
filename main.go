@@ -5,8 +5,8 @@ import (
 	"isp-lock-service/conf"
 	"isp-lock-service/routes"
 
-	"github.com/integration-system/isp-kit/bootstrap"
-	"github.com/integration-system/isp-kit/shutdown"
+	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/shutdown"
 )
 
 var (
