@@ -32,13 +32,18 @@ func (l Locator) Handler() *grpc.Mux {
 	lockerService := service.NewLocker(l.logger, lockRepo)
 	lockerController := controller.NewLocker(l.logger, lockerService)
 
-	limiterRepo := repository.NewRateLimiter(l.logger, l.redisCli, l.cfg.Redis)
-	limiterService := service.NewRateLimiter(limiterRepo)
-	limiterController := controller.NewRateLimiter(limiterService)
+	rateLimiterRepo := repository.NewRateLimiter(l.logger, l.redisCli, l.cfg.Redis)
+	rateLimiterService := service.NewRateLimiter(rateLimiterRepo)
+	rateLimiterController := controller.NewRateLimiter(rateLimiterService)
+
+	dailyLimiterRepo := repository.NewDailyLimiter(l.redisCli, l.cfg.Redis)
+	dailyLimiterService := service.NewDailyLimiter(dailyLimiterRepo)
+	dailyLimiterController := controller.NewDailyLimiter(dailyLimiterService)
 
 	c := routes.Controllers{
-		Locker:      lockerController,
-		RateLimiter: limiterController,
+		Locker:       lockerController,
+		RateLimiter:  rateLimiterController,
+		DailyLimiter: dailyLimiterController,
 	}
 	mapper := endpoint.DefaultWrapper(l.logger, endpoint.BodyLogger(l.logger))
 	handler := routes.Handler(mapper, c)

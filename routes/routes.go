@@ -9,8 +9,9 @@ import (
 )
 
 type Controllers struct {
-	Locker      controller.Locker
-	RateLimiter controller.RateLimiter
+	Locker       controller.Locker
+	RateLimiter  controller.RateLimiter
+	DailyLimiter controller.DailyLimiter
 }
 
 func EndpointDescriptors() []cluster.EndpointDescriptor {
@@ -41,5 +42,15 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.RateLimiter.Limit,
+	}, {
+		Path:             "isp-lock-service/daily_limit/increment",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.DailyLimiter.Increment,
+	}, {
+		Path:             "isp-lock-service/daily_limit/set",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.DailyLimiter.Set,
 	}}
 }
