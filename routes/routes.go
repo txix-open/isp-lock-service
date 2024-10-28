@@ -52,5 +52,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.DailyLimiter.Set,
+	}, {
+		Path:             "isp-lock-service/daily_limit/get",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.DailyLimiter.Get,
 	}}
 }

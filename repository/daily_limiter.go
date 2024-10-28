@@ -49,3 +49,15 @@ func (r dailyLimiter) Set(ctx context.Context, key string, dailyLimit uint64) er
 	}
 	return nil
 }
+
+func (r dailyLimiter) GetLimit(ctx context.Context, key string) (uint64, error) {
+	val, err := r.redisCli.Get(ctx, makeKey(r.keyPrefix, key)).Uint64()
+	if errors.Is(err, redis.Nil) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, errors.WithMessage(err, "redis cli get daily limit")
+	}
+
+	return val, nil
+}
