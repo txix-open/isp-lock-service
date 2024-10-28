@@ -12,6 +12,7 @@ import (
 type dailyLimiterRepo interface {
 	Increment(ctx context.Context, key string) (uint64, error)
 	Set(ctx context.Context, key string, dailyLimit uint64) error
+	GetLimit(ctx context.Context, key string) (uint64, error)
 }
 
 type dailyLimiter struct {
@@ -34,6 +35,15 @@ func (s dailyLimiter) Set(ctx context.Context, req domain.SetRequest) error {
 		return errors.WithMessage(err, "repo set")
 	}
 	return nil
+}
+
+func (s dailyLimiter) GetLimit(ctx context.Context, req domain.GetRequest) (*domain.GetResponse, error) {
+	v, err := s.repo.GetLimit(ctx, s.makeKey(req.Key, req.Today))
+	if err != nil {
+		return nil, errors.WithMessage(err, "repo get")
+	}
+
+	return &domain.GetResponse{Value: v}, nil
 }
 
 func (s dailyLimiter) makeKey(key string, today time.Time) string {

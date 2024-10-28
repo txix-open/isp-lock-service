@@ -18,3 +18,12 @@ type SetRequest struct {
 	Value uint64    `validate:"required"`
 	Today time.Time `validate:"required"`
 }
+
+type GetRequest struct {
+	Key   string    `validate:"required"`
+	Today time.Time `validate:"required"`
+}
+
+type GetResponse struct {
+	Value uint64
+}

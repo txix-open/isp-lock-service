@@ -10,6 +10,7 @@ import (
 type dailyLimiterService interface {
 	Increment(ctx context.Context, req domain.IncrementRequest) (*domain.IncrementResponse, error)
 	Set(ctx context.Context, req domain.SetRequest) error
+	GetLimit(ctx context.Context, req domain.GetRequest) (*domain.GetResponse, error)
 }
 
 type DailyLimiter struct {
@@ -32,4 +33,13 @@ func (c DailyLimiter) Set(ctx context.Context, req domain.SetRequest) error {
 		return apierrors.NewInternalServiceError(err)
 	}
 	return nil
+}
+
+func (c DailyLimiter) Get(ctx context.Context, req domain.GetRequest) (*domain.GetResponse, error) {
+	resp, err := c.svc.GetLimit(ctx, req)
+	if err != nil {
+		return nil, apierrors.NewInternalServiceError(err)
+	}
+
+	return resp, nil
 }
