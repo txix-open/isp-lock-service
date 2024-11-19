@@ -83,7 +83,12 @@ func (a *Assembly) Closers() []app.Closer {
 			return nil
 		}),
 		app.CloserFunc(func() error {
-			_ = a.redisCli.Close()
+			if a.redisCli != nil {
+				err := a.redisCli.Close()
+				if err != nil {
+					return errors.WithMessage(err, "shutdown redis client")
+				}
+			}
 			return nil
 		}),
 	}
