@@ -27,12 +27,17 @@ func NewLocator(logger log.Logger, redisCli goredislib.UniversalClient, cfg conf
 	}
 }
 
-func (l Locator) Handler() *grpc.Mux {
+type locatorConfig struct {
+	handler         *grpc.Mux
+	rateLimiterRepo *repository.RateLimiter
+}
+
+func (l Locator) Config() locatorConfig {
 	lockRepo := repository.NewLocker(l.logger, l.redisCli, l.cfg.Redis)
 	lockerService := service.NewLocker(l.logger, lockRepo)
 	lockerController := controller.NewLocker(l.logger, lockerService)
 
-	rateLimiterRepo := repository.NewRateLimiter(l.logger, l.redisCli, l.cfg.Redis)
+	rateLimiterRepo := repository.NewRateLimiter(l.logger, l.redisCli, l.cfg)
 	rateLimiterService := service.NewRateLimiter(rateLimiterRepo)
 	rateLimiterController := controller.NewRateLimiter(rateLimiterService)
 
@@ -45,7 +50,10 @@ func (l Locator) Handler() *grpc.Mux {
 		RateLimiter:  rateLimiterController,
 		DailyLimiter: dailyLimiterController,
 	}
-	mapper := endpoint.DefaultWrapper(l.logger, endpoint.BodyLogger(l.logger))
-	handler := routes.Handler(mapper, c)
-	return handler
+	mapper := endpoint.DefaultWrapper(l.logger, endpoint.Log(l.logger, true))
+
+	return locatorConfig{
+		handler:         routes.Handler(mapper, c),
+		rateLimiterRepo: rateLimiterRepo,
+	}
 }

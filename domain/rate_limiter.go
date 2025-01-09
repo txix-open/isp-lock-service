@@ -14,3 +14,7 @@ type RateLimiterResponse struct {
 	Remaining  int
 	RetryAfter time.Duration
 }
+
+type InMemRateLimiterResponse struct {
+	PassAfter time.Duration
+}
