@@ -16,14 +16,22 @@ func TestRateLimiter(t *testing.T) {
 	t.Parallel()
 	tst, required := test.New(t)
 	redis := NewRedis(tst)
-	r := repository.NewRateLimiter(tst.Logger(), redis, conf.Redis{Prefix: "test"})
+	r := repository.NewRateLimiter(tst.Logger(), redis, conf.Remote{
+		Redis: conf.Redis{Prefix: "test"},
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	tst.T().Cleanup(r.Close)
 
 	var (
 		maxRps = 5
 		key    = "key"
+		ctx    = context.Background()
 	)
 	for i := range maxRps {
-		resp, err := r.Limit(context.Background(), key, maxRps)
+		resp, err := r.Limit(ctx, key, maxRps)
 		required.NoError(err)
 		exp := &domain.RateLimiterResponse{
 			Allow:      true,
@@ -33,7 +41,7 @@ func TestRateLimiter(t *testing.T) {
 		required.EqualValues(exp, resp)
 	}
 
-	resp, err := r.Limit(context.Background(), key, maxRps)
+	resp, err := r.Limit(ctx, key, maxRps)
 	required.NoError(err)
 	exp := &domain.RateLimiterResponse{
 		Allow:      false,
@@ -44,7 +52,7 @@ func TestRateLimiter(t *testing.T) {
 	required.EqualValues(exp, resp)
 
 	time.Sleep(time.Second)
-	resp, err = r.Limit(context.Background(), key, maxRps)
+	resp, err = r.Limit(ctx, key, maxRps)
 	required.NoError(err)
 	exp = &domain.RateLimiterResponse{
 		Allow:      true,
@@ -55,7 +63,7 @@ func TestRateLimiter(t *testing.T) {
 
 	for range 1000 {
 		key := fake.It[string]()
-		resp, err := r.Limit(context.Background(), key, 1)
+		resp, err := r.Limit(ctx, key, 1)
 		required.NoError(err)
 		exp := &domain.RateLimiterResponse{
 			Allow:      true,
@@ -64,4 +72,122 @@ func TestRateLimiter(t *testing.T) {
 		}
 		required.EqualValues(exp, resp)
 	}
+}
+
+func TestRateLimiterInMem(t *testing.T) {
+	t.Parallel()
+	tst, required := test.New(t)
+	r := repository.NewRateLimiter(tst.Logger(), nil, conf.Remote{
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	tst.T().Cleanup(r.Close)
+
+	var (
+		maxRps      = 5
+		reqInterval = time.Second / time.Duration(maxRps)
+		key         = "key"
+		ctx         = context.Background()
+	)
+	for i := range 2 * maxRps {
+		resp, err := r.LimitInMem(ctx, key, maxRps)
+		required.NoError(err)
+		expPassAfter := reqInterval * time.Duration(i)
+		required.True(resp.PassAfter <= expPassAfter)
+	}
+
+	for range 1000 {
+		key := fake.It[string]()
+		resp, err := r.LimitInMem(ctx, key, 1)
+		required.NoError(err)
+		required.True(resp.PassAfter <= 0)
+	}
+}
+
+func BenchmarkRateLimiter(b *testing.B) {
+	tst, _ := test.New(new(testing.T))
+	redis := NewRedis(tst)
+	r := repository.NewRateLimiter(tst.Logger(), redis, conf.Remote{
+		Redis: conf.Redis{Prefix: "test"},
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	b.Cleanup(r.Close)
+
+	var (
+		maxRps = 10
+		key    = fake.It[string]()
+		ctx    = context.Background()
+	)
+	b.ResetTimer()
+
+	b.Run("Limit", func(b *testing.B) {
+		for range b.N {
+			_, err := r.Limit(ctx, key, maxRps)
+			if err != nil {
+				b.Fatalf("unexpected error: %v", err)
+			}
+		}
+	})
+
+	b.Run("LimitInMem", func(b *testing.B) {
+		for range b.N {
+			_, err := r.LimitInMem(ctx, key, maxRps)
+			if err != nil {
+				b.Fatalf("unexpected error: %v", err)
+			}
+		}
+	})
+}
+
+// nolint:gocognit
+func BenchmarkRateLimiter2(b *testing.B) {
+	tst, _ := test.New(new(testing.T))
+	redis := NewRedis(tst)
+	r := repository.NewRateLimiter(tst.Logger(), redis, conf.Remote{
+		Redis: conf.Redis{Prefix: "test"},
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	b.Cleanup(r.Close)
+
+	var (
+		keys = fake.It[[]string](fake.MinSliceSize(100), fake.MaxSliceSize(100))
+		ctx  = context.Background()
+	)
+	b.ResetTimer()
+
+	b.Run("Limit", func(b *testing.B) {
+		for range b.N {
+			for i := range 100 {
+				maxRps := i + 1
+				for _, key := range keys {
+					_, err := r.Limit(ctx, key, maxRps)
+					if err != nil {
+						b.Fatalf("unexpected error for maxRps %d and key %s: %v", maxRps, key, err)
+					}
+				}
+			}
+		}
+	})
+
+	b.Run("LimitInMem", func(b *testing.B) {
+		for range b.N {
+			for i := range 100 {
+				maxRps := i + 1
+				for _, key := range keys {
+					_, err := r.LimitInMem(ctx, key, maxRps)
+					if err != nil {
+						b.Fatalf("unexpected error for maxRps %d and key %s: %v", maxRps, key, err)
+					}
+				}
+			}
+		}
+	})
 }
