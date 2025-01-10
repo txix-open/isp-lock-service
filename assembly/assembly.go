@@ -7,6 +7,7 @@ import (
 	"github.com/txix-open/isp-kit/observability/sentry"
 	"github.com/txix-open/isp-kit/rc"
 	"isp-lock-service/conf"
+	"isp-lock-service/repository"
 
 	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/app"
@@ -17,23 +18,29 @@ import (
 )
 
 type Assembly struct {
-	boot     *bootstrap.Bootstrap
-	server   *grpc.Server
-	redisCli *goredislib.Client
-	logger   *log.Adapter
+	boot            *bootstrap.Bootstrap
+	server          *grpc.Server
+	redisCli        *goredislib.Client
+	logger          *log.Adapter
+	rateLimiterRepo *repository.RateLimiter
 }
 
 func New(boot *bootstrap.Bootstrap) (*Assembly, error) {
 	server := grpc.DefaultServer()
 	return &Assembly{
-		boot:     boot,
-		server:   server,
-		redisCli: nil,
-		logger:   boot.App.Logger(),
+		boot:            boot,
+		server:          server,
+		redisCli:        nil,
+		logger:          boot.App.Logger(),
+		rateLimiterRepo: nil,
 	}, nil
 }
 
 func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error {
+	if a.rateLimiterRepo != nil {
+		a.rateLimiterRepo.Close()
+	}
+
 	newCfg, _, err := rc.Upgrade[conf.Remote](a.boot.RemoteConfig, remoteConfig)
 	if err != nil {
 		a.boot.Fatal(errors.WithMessage(err, "upgrade remote config"))
@@ -48,8 +55,10 @@ func (a *Assembly) ReceiveConfig(ctx context.Context, remoteConfig []byte) error
 
 	logger := sentry.WrapErrorLogger(a.logger, a.boot.SentryHub)
 	locator := NewLocator(logger, a.redisCli, newCfg)
-	handler := locator.Handler()
-	a.server.Upgrade(handler)
+	locatorCfg := locator.Config()
+
+	a.rateLimiterRepo = locatorCfg.rateLimiterRepo
+	a.server.Upgrade(locatorCfg.handler)
 
 	return nil
 }
@@ -88,6 +97,12 @@ func (a *Assembly) Closers() []app.Closer {
 				if err != nil {
 					return errors.WithMessage(err, "shutdown redis client")
 				}
+			}
+			return nil
+		}),
+		app.CloserFunc(func() error {
+			if a.rateLimiterRepo != nil {
+				a.rateLimiterRepo.Close()
 			}
 			return nil
 		}),

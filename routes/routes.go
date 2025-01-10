@@ -57,5 +57,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.DailyLimiter.Get,
+	}, {
+		Path:             "isp-lock-service/rate_limit/inmem",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.RateLimiter.LimitInMem,
 	}}
 }

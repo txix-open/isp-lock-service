@@ -17,8 +17,9 @@ func init() {
 }
 
 type Remote struct {
-	LogLevel log.Level `schemaGen:"logLevel" schema:"Уровень логирования"`
-	Redis    Redis     `schema:"Настройки redis"`
+	LogLevel     log.Level    `schemaGen:"logLevel" schema:"Уровень логирования"`
+	Redis        Redis        `schema:"Настройки redis"`
+	InMemLimiter InMemLimiter `schema:"Настройка rate limiter в оперативной памяти"`
 }
 
 type Redis struct {
@@ -36,4 +37,9 @@ type RedisSentinel struct {
 	MasterName string   `validate:"required" schema:"Имя мастера"`
 	Username   string   `schema:"Имя пользователя в sentinel"`
 	Password   string   `schema:"Пароль в sentinel"`
+}
+
+type InMemLimiter struct {
+	ClearPeriodInSec      int `validate:"required,min=1" schema:"Интервал очистки неиспользуемых лимитеров в секундах"`
+	LastUseThresholdInSec int `validate:"required,min=1" schema:"Пороговое значение в секундах, после которого лимитер считается неиспользуемым"`
 }
