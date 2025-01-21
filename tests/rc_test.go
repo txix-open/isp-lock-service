@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"golang.org/x/sync/errgroup"
 	"isp-lock-service/conf"
 	"isp-lock-service/repository"
+
+	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/txix-open/isp-kit/test"
 )
@@ -28,7 +29,7 @@ func TestOne(t *testing.T) {
 	rcli := NewRedis(tst)
 	ctx := context.Background()
 
-	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"})
+	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
 	// success story
 	key := time.Now().String()
@@ -70,7 +71,7 @@ func TestConcurrency(t *testing.T) {
 	tst, required := test.New(t)
 	redis := NewRedis(tst)
 
-	r := repository.NewLocker(tst.Logger(), redis, conf.Redis{Prefix: "testPrefix"})
+	r := repository.NewLocker(tst.Logger(), redis, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
 	group, ctx := errgroup.WithContext(context.Background())
 	group.SetLimit(32)

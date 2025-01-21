@@ -1,12 +1,13 @@
 package assembly
 
 import (
-	goredislib "github.com/redis/go-redis/v9"
 	"isp-lock-service/conf"
 	"isp-lock-service/controller"
 	"isp-lock-service/repository"
 	"isp-lock-service/routes"
 	"isp-lock-service/service"
+
+	goredislib "github.com/redis/go-redis/v9"
 
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
@@ -33,7 +34,7 @@ type locatorConfig struct {
 }
 
 func (l Locator) Config() locatorConfig {
-	lockRepo := repository.NewLocker(l.logger, l.redisCli, l.cfg.Redis)
+	lockRepo := repository.NewLocker(l.logger, l.redisCli, l.cfg.Redis, l.cfg.LockSettings)
 	lockerService := service.NewLocker(l.logger, lockRepo)
 	lockerController := controller.NewLocker(l.logger, lockerService)
 
