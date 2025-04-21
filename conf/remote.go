@@ -20,6 +20,7 @@ type Remote struct {
 	LogLevel     log.Level    `schemaGen:"logLevel" schema:"Уровень логирования"`
 	Redis        Redis        `schema:"Настройки redis"`
 	InMemLimiter InMemLimiter `schema:"Настройка rate limiter в оперативной памяти"`
+	LockSettings LockSettings `schema:"Настройка захвата лока"`
 }
 
 type Redis struct {
@@ -42,4 +43,9 @@ type RedisSentinel struct {
 type InMemLimiter struct {
 	ClearPeriodInSec      int `validate:"required,min=1" schema:"Интервал очистки неиспользуемых лимитеров в секундах"`
 	LastUseThresholdInSec int `validate:"required,min=1" schema:"Пороговое значение в секундах, после которого лимитер считается неиспользуемым"`
+}
+
+type LockSettings struct {
+	MaxLockRetryDelayMs int `validate:"gte=0,gtefield=MinLockRetryDelayMs" schema:"Максимальное ожидание между ретраями захвата лока, по умолчанию 100"`
+	MinLockRetryDelayMs int `validate:"gte=0" schema:"Минимальное ожидание между ретраями захвата лока, по умолчанию 50"`
 }
