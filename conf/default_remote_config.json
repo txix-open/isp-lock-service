@@ -9,5 +9,9 @@
   "inMemLimiter": {
     "lastUseThresholdInSec": 10,
     "clearPeriodInSec": 60
+  },
+  "lockSettings": {
+    "maxLockRetryDelayMs": 100,
+    "minLockRetryDelayMs": 50
   }
 }
