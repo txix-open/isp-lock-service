@@ -1,7 +1,6 @@
 package tests_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/txix-open/isp-kit/test"
@@ -19,7 +18,7 @@ func TestDailyLimiter(t *testing.T) {
 		redis         = NewRedis(tst)
 		r             = repository.NewDailyLimiter(redis, conf.Redis{Prefix: "test"})
 		svc           = service.NewDailyLimiter(r)
-		ctx           = context.Background()
+		ctx           = t.Context()
 		req           = fake.It[domain.IncrementRequest]()
 	)
 
