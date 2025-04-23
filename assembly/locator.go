@@ -1,6 +1,7 @@
 package assembly
 
 import (
+	"github.com/txix-open/isp-kit/grpc/endpoint/grpclog"
 	"isp-lock-service/conf"
 	"isp-lock-service/controller"
 	"isp-lock-service/repository"
@@ -51,7 +52,7 @@ func (l Locator) Config() locatorConfig {
 		RateLimiter:  rateLimiterController,
 		DailyLimiter: dailyLimiterController,
 	}
-	mapper := endpoint.DefaultWrapper(l.logger, endpoint.Log(l.logger, true))
+	mapper := endpoint.DefaultWrapper(l.logger, grpclog.Log(l.logger, true))
 
 	return locatorConfig{
 		handler:         routes.Handler(mapper, c),
