@@ -1,7 +1,6 @@
 package tests_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -27,7 +26,7 @@ func TestOne(t *testing.T) {
 
 	tst, required := test.New(t)
 	rcli := NewRedis(tst)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
@@ -73,7 +72,7 @@ func TestConcurrency(t *testing.T) {
 
 	r := repository.NewLocker(tst.Logger(), redis, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
-	group, ctx := errgroup.WithContext(context.Background())
+	group, ctx := errgroup.WithContext(t.Context())
 	group.SetLimit(32)
 	for range 10000 {
 		group.Go(func() error {

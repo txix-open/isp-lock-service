@@ -1,7 +1,6 @@
 package tests_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ func TestRateLimiter(t *testing.T) {
 	var (
 		maxRps = 5
 		key    = "key"
-		ctx    = context.Background()
+		ctx    = t.Context()
 	)
 	for i := range maxRps {
 		resp, err := r.Limit(ctx, key, maxRps)
@@ -89,7 +88,7 @@ func TestRateLimiterInMem(t *testing.T) {
 		maxRps      = 5
 		reqInterval = time.Second / time.Duration(maxRps)
 		key         = "key"
-		ctx         = context.Background()
+		ctx         = t.Context()
 	)
 	for i := range 2 * maxRps {
 		resp, err := r.LimitInMem(ctx, key, maxRps)
@@ -121,7 +120,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 	var (
 		maxRps = 10
 		key    = fake.It[string]()
-		ctx    = context.Background()
+		ctx    = b.Context()
 	)
 	b.ResetTimer()
 
@@ -159,7 +158,7 @@ func BenchmarkRateLimiter2(b *testing.B) {
 
 	var (
 		keys = fake.It[[]string](fake.MinSliceSize(100), fake.MaxSliceSize(100))
-		ctx  = context.Background()
+		ctx  = b.Context()
 	)
 	b.ResetTimer()
 
