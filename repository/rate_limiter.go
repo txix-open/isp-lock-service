@@ -80,6 +80,24 @@ func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps int) (*do
 	}, nil
 }
 
+func (r *RateLimiter) Close() {
+	r.cancelFn()
+}
+
+func (r *RateLimiter) removeUnusedLimiters(lastUseThreshold time.Duration) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	limiterCount := len(r.inMemLimiters)
+	for k, v := range r.inMemLimiters {
+		if time.Since(v.lastUse) >= lastUseThreshold {
+			delete(r.inMemLimiters, k)
+		}
+	}
+
+	return limiterCount - len(r.inMemLimiters)
+}
+
 func (r *RateLimiter) clearInMemLimiters(ctx context.Context, cfg conf.InMemLimiter) {
 	ctx = log.ToContext(ctx, log.String("worker", "limiterCleaner"))
 	var (
@@ -98,22 +116,4 @@ func (r *RateLimiter) clearInMemLimiters(ctx context.Context, cfg conf.InMemLimi
 			return
 		}
 	}
-}
-
-func (r *RateLimiter) removeUnusedLimiters(lastUseThreshold time.Duration) int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	limiterCount := len(r.inMemLimiters)
-	for k, v := range r.inMemLimiters {
-		if time.Since(v.lastUse) >= lastUseThreshold {
-			delete(r.inMemLimiters, k)
-		}
-	}
-
-	return limiterCount - len(r.inMemLimiters)
-}
-
-func (r *RateLimiter) Close() {
-	r.cancelFn()
 }
