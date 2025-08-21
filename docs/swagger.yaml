@@ -3,6 +3,7 @@ definitions:
   domain.LockResponse:
     properties:
       lockKey:
+        description: 'nolint: tagliatelle'
         type: string
     type: object
 host: localhost:9000
@@ -59,7 +60,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       summary: снимаем лок со строки
       tags:
       - locker
