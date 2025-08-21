@@ -18,6 +18,13 @@ type Locker struct {
 	logger log.Logger
 }
 
+func NewLocker(logger log.Logger, repo LockerRepo) Locker {
+	return Locker{
+		repo:   repo,
+		logger: logger,
+	}
+}
+
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	// nolint: wrapcheck
 	return l.repo.Lock(ctx, req.Key, req.TTLInSec)
@@ -26,11 +33,4 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
 	// nolint: wrapcheck
 	return l.repo.UnLock(ctx, req.Key, req.LockKey)
-}
-
-func NewLocker(logger log.Logger, repo LockerRepo) Locker {
-	return Locker{
-		repo:   repo,
-		logger: logger,
-	}
 }
