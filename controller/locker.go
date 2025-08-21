@@ -18,6 +18,13 @@ type Locker struct {
 	logger log.Logger
 }
 
+func NewLocker(logger log.Logger, s LockerService) Locker {
+	return Locker{
+		s:      s,
+		logger: logger,
+	}
+}
+
 // Lock
 // @Tags locker
 // @Summary выставляем лок на строку
@@ -43,11 +50,4 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 // @Router /api/isp-lock-service/unlock [POST]
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
 	return l.s.UnLock(ctx, req)
-}
-
-func NewLocker(logger log.Logger, s LockerService) Locker {
-	return Locker{
-		s:      s,
-		logger: logger,
-	}
 }
