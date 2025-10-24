@@ -91,7 +91,7 @@ func TestRateLimiterInMem(t *testing.T) {
 		ctx         = t.Context()
 	)
 	for i := range 2 * maxRps {
-		resp, err := r.LimitInMem(ctx, key, maxRps)
+		resp, err := r.LimitInMem(ctx, key, float64(maxRps))
 		required.NoError(err)
 		expPassAfter := reqInterval * time.Duration(i)
 		required.True(resp.PassAfter <= expPassAfter)
@@ -102,6 +102,31 @@ func TestRateLimiterInMem(t *testing.T) {
 		resp, err := r.LimitInMem(ctx, key, 1)
 		required.NoError(err)
 		required.True(resp.PassAfter <= 0)
+	}
+}
+
+func TestRateLimiterInMemLowRPSCase(t *testing.T) {
+	t.Parallel()
+	tst, required := test.New(t)
+	r := repository.NewRateLimiter(tst.Logger(), nil, conf.Remote{
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	tst.T().Cleanup(r.Close)
+
+	var (
+		maxRps      = 0.5
+		reqInterval = time.Duration(float64(time.Second) / maxRps)
+		key         = "key"
+		ctx         = t.Context()
+	)
+	for i := range 3 {
+		resp, err := r.LimitInMem(ctx, key, maxRps)
+		required.NoError(err)
+		expPassAfter := reqInterval * time.Duration(i+1)
+		required.True(resp.PassAfter <= expPassAfter)
 	}
 }
 
@@ -135,7 +160,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 
 	b.Run("LimitInMem", func(b *testing.B) {
 		for range b.N {
-			_, err := r.LimitInMem(ctx, key, maxRps)
+			_, err := r.LimitInMem(ctx, key, float64(maxRps))
 			if err != nil {
 				b.Fatalf("unexpected error: %v", err)
 			}
@@ -181,7 +206,7 @@ func BenchmarkRateLimiter2(b *testing.B) {
 			for i := range 100 {
 				maxRps := i + 1
 				for _, key := range keys {
-					_, err := r.LimitInMem(ctx, key, maxRps)
+					_, err := r.LimitInMem(ctx, key, float64(maxRps))
 					if err != nil {
 						b.Fatalf("unexpected error for maxRps %d and key %s: %v", maxRps, key, err)
 					}
