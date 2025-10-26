@@ -67,7 +67,8 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 		),
 	)
 
-	if err := mtx.Lock(); err != nil {
+	err := mtx.Lock()
+	if err != nil {
 		return nil, errors.WithMessagef(err, "fail lock. key=%s", key)
 	}
 
