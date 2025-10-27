@@ -6,13 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"isp-lock-service/conf"
+	"isp-lock-service/domain"
+
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/pkg/errors"
 	goredislib "github.com/redis/go-redis/v9"
 	"github.com/txix-open/isp-kit/log"
 	"golang.org/x/time/rate"
-	"isp-lock-service/conf"
-	"isp-lock-service/domain"
 )
 
 type RateLimiter struct {
@@ -27,6 +28,7 @@ type RateLimiter struct {
 
 type limiter struct {
 	*rate.Limiter
+
 	lastUse time.Time
 }
 
