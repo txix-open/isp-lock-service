@@ -8,7 +8,7 @@ import (
 
 type limiterRepo interface {
 	Limit(ctx context.Context, key string, maxRps int) (*domain.RateLimiterResponse, error)
-	LimitInMem(ctx context.Context, key string, maxRps int) (*domain.InMemRateLimiterResponse, error)
+	LimitInMem(ctx context.Context, key string, maxRps float64) (*domain.RateLimiterInMemResponse, error)
 }
 
 type rateLimiter struct {
@@ -23,6 +23,6 @@ func (s rateLimiter) Limit(ctx context.Context, req domain.RateLimiterRequest) (
 	return s.repo.Limit(ctx, req.Key, req.MaxRps) // nolint:wrapcheck
 }
 
-func (s rateLimiter) LimitInMem(ctx context.Context, req domain.RateLimiterRequest) (*domain.InMemRateLimiterResponse, error) {
+func (s rateLimiter) LimitInMem(ctx context.Context, req domain.RateLimiterInMemRequest) (*domain.RateLimiterInMemResponse, error) {
 	return s.repo.LimitInMem(ctx, req.Key, req.MaxRps) // nolint:wrapcheck
 }
