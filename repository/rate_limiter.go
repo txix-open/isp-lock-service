@@ -60,14 +60,17 @@ func (r *RateLimiter) Limit(ctx context.Context, key string, maxRps int) (*domai
 	}, nil
 }
 
-func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps int) (*domain.InMemRateLimiterResponse, error) {
-	key = fmt.Sprintf("%s:::%d", key, maxRps)
+func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps float64) (*domain.RateLimiterInMemResponse, error) {
+	key = fmt.Sprintf("%s:::%0.5f", key, maxRps)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	lim, ok := r.inMemLimiters[key]
 	if !ok {
 		lim = &limiter{Limiter: rate.NewLimiter(rate.Limit(maxRps), 1)}
+		if maxRps < 1 {
+			lim.ReserveN(time.Now(), 1)
+		}
 		r.inMemLimiters[key] = lim
 	}
 	lim.lastUse = time.Now()
@@ -77,7 +80,7 @@ func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps int) (*do
 		return nil, errors.Errorf("can't reserve time; key='%s'", key)
 	}
 
-	return &domain.InMemRateLimiterResponse{
+	return &domain.RateLimiterInMemResponse{
 		PassAfter: res.DelayFrom(lim.lastUse),
 	}, nil
 }
