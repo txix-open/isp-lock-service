@@ -10,8 +10,9 @@ type RateLimiterRequest struct {
 }
 
 type RateLimiterInMemRequest struct {
-	Key    string  `validate:"required"`
-	MaxRps float64 `validate:"required"`
+	Key         string  `validate:"required"`
+	MaxRps      float64 `validate:"required"`
+	InfiniteKey bool
 }
 
 type RateLimiterResponse struct {

@@ -29,7 +29,8 @@ type RateLimiter struct {
 type limiter struct {
 	*rate.Limiter
 
-	lastUse time.Time
+	lastUse     time.Time
+	infiniteKey bool
 }
 
 func NewRateLimiter(logger log.Logger, cli goredislib.UniversalClient, cfg conf.Remote) *RateLimiter {
@@ -60,20 +61,24 @@ func (r *RateLimiter) Limit(ctx context.Context, key string, maxRps int) (*domai
 	}, nil
 }
 
-func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps float64) (*domain.RateLimiterInMemResponse, error) {
+func (r *RateLimiter) LimitInMem(_ context.Context, key string, maxRps float64, infiniteKey bool) (*domain.RateLimiterInMemResponse, error) {
 	key = fmt.Sprintf("%s:::%0.5f", key, maxRps)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	lim, ok := r.inMemLimiters[key]
 	if !ok {
-		lim = &limiter{Limiter: rate.NewLimiter(rate.Limit(maxRps), 1)}
+		lim = &limiter{
+			Limiter:     rate.NewLimiter(rate.Limit(maxRps), 1),
+			infiniteKey: infiniteKey,
+		}
 		if maxRps < 1 {
 			lim.ReserveN(time.Now(), 1)
 		}
 		r.inMemLimiters[key] = lim
 	}
 	lim.lastUse = time.Now()
+	lim.infiniteKey = infiniteKey
 
 	res := lim.ReserveN(lim.lastUse, 1)
 	if !res.OK() {
@@ -95,7 +100,7 @@ func (r *RateLimiter) removeUnusedLimiters(lastUseThreshold time.Duration) int {
 
 	limiterCount := len(r.inMemLimiters)
 	for k, v := range r.inMemLimiters {
-		if time.Since(v.lastUse) >= lastUseThreshold {
+		if time.Since(v.lastUse) >= lastUseThreshold && !v.infiniteKey {
 			delete(r.inMemLimiters, k)
 		}
 	}
