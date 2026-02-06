@@ -7,7 +7,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.16.0
-	github.com/txix-open/isp-kit v1.59.1
+	github.com/txix-open/isp-kit v1.63.0
 	github.com/txix-open/jsonschema v1.3.0
 	golang.org/x/sync v0.17.0
 	golang.org/x/time v0.14.0
