@@ -86,6 +86,12 @@
                         "schema": {
                             "$ref": "#/definitions/domain.LockResponse"
                         }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.Error"
+                        }
                     }
                 }
             }
@@ -127,6 +133,21 @@
         }
     },
     "definitions": {
+        "apierrors.Error": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "errorCode": {
+                    "type": "integer"
+                },
+                "errorMessage": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.LockResponse": {
             "type": "object",
             "properties": {

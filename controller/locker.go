@@ -2,9 +2,13 @@ package controller
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"isp-lock-service/domain"
 
+	"github.com/go-redsync/redsync/v4"
+	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"github.com/txix-open/isp-kit/log"
 )
 
@@ -49,9 +53,20 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 // @Accept json
 // @Produce json
 // @Success 200 {object} domain.LockResponse
+// @Failure 423 {object} apierrors.Error
 // @Router /api/isp-lock-service/try_lock [POST]
 func (l Locker) TryLock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
-	return l.s.TryLock(ctx, req)
+	var errTaken *redsync.ErrTaken
+
+	resp, err := l.s.TryLock(ctx, req)
+	switch {
+	case errors.As(err, &errTaken):
+		return nil, apierrors.NewBusinessError(http.StatusLocked, err.Error(), err)
+	case err != nil:
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 // UnLock
