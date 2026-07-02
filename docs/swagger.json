@@ -53,7 +53,7 @@
         },
         "/api/isp-lock-service/try_lock": {
             "post": {
-                "description": "Пытаемся взять лок один раз. В отличие от Lock, не делает повторных попыток. При успехе возвращаем ключ для разблокировки.",
+                "description": "Пытаемся взять лок один раз. В отличие от Lock, не делает повторных попыток. При успехе возвращаем ключ для разблокировки.\nПри получение ошибки, что лок уже занят, возращаем ошибку с кодом 423.",
                 "consumes": [
                     "application/json"
                 ],
@@ -87,8 +87,8 @@
                             "$ref": "#/definitions/domain.LockResponse"
                         }
                     },
-                    "423": {
-                        "description": "Locked",
+                    "400": {
+                        "description": "lock already taken",
                         "schema": {
                             "$ref": "#/definitions/apierrors.Error"
                         }

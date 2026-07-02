@@ -48,12 +48,13 @@ func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockR
 // @Tags locker
 // @Summary однократная попытка взять лок без ретраев
 // @Description Пытаемся взять лок один раз. В отличие от Lock, не делает повторных попыток. При успехе возвращаем ключ для разблокировки.
+// @Description При получение ошибки, что лок уже занят, возращаем ошибку с кодом 423.
 // @Param key query string true "строка для лока"
 // @Param ttlInSec query int true "число секунд после которых блокировка снимется автоматически"
 // @Accept json
 // @Produce json
 // @Success 200 {object} domain.LockResponse
-// @Failure 423 {object} apierrors.Error
+// @Failure 400 {object} apierrors.Error "lock already taken"
 // @Router /api/isp-lock-service/try_lock [POST]
 func (l Locker) TryLock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	var errTaken *redsync.ErrTaken
