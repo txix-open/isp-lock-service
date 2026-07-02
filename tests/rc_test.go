@@ -1,7 +1,10 @@
 package tests_test
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -43,10 +46,10 @@ func TestOneLock(t *testing.T) {
 	required.NoError(err)
 
 	// look at wait
+	n := time.Now()
 	_, err = r.Lock(ctx, key, 1)
 	required.NoError(err)
 
-	n := time.Now()
 	_, err = r.Lock(ctx, key, 1)
 	required.NoError(err)
 
@@ -79,15 +82,17 @@ func TestOneTryLock(t *testing.T) {
 	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
 	// success story
-	key := time.Now().String()
-	l, err := r.TryLock(ctx, key, 10)
+	rnd, err := rand.Int(rand.Reader, big.NewInt(time.Now().Unix()))
+	required.NoError(err)
+	key := strconv.Itoa(int(rnd.Int64()))
+	l, err := r.TryLock(ctx, key, 1)
 	required.NoError(err)
 
 	_, err = r.UnLock(ctx, key, l.LockKey)
 	required.NoError(err)
 
 	// second lock — no wait, immediate error on conflict
-	resp, err := r.TryLock(ctx, key, 10)
+	resp, err := r.TryLock(ctx, key, 3)
 	required.NoError(err)
 
 	_, err = r.TryLock(ctx, key, 2)
@@ -109,13 +114,15 @@ func TestTryLockAfterTTL(t *testing.T) {
 
 	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
 
-	key := time.Now().String()
-	_, err := r.TryLock(ctx, key, 3)
+	rnd, err := rand.Int(rand.Reader, big.NewInt(time.Now().Unix()))
+	required.NoError(err)
+	key := strconv.Itoa(int(rnd.Int64()))
+	_, err = r.TryLock(ctx, key, 1)
 	required.NoError(err)
 
-	time.Sleep(3200 * time.Millisecond)
+	time.Sleep(1200 * time.Millisecond)
 
-	l2, err := r.TryLock(ctx, key, 10)
+	l2, err := r.TryLock(ctx, key, 1)
 	required.NoError(err)
 
 	_, err = r.UnLock(ctx, key, l2.LockKey)
