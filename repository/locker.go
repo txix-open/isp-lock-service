@@ -77,6 +77,23 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 	return &domain.LockResponse{LockKey: value}, nil
 }
 
+func (l Locker) TryLock(_ context.Context, key string, ttl int) (*domain.LockResponse, error) {
+	key = makeKey(l.prefix, key)
+
+	mtx := l.cli.NewMutex(key,
+		redsync.WithExpiry(time.Duration(ttl)*time.Second),
+	)
+
+	err := mtx.TryLock()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "fail lock. key=%s", key)
+	}
+
+	value := mtx.Value()
+
+	return &domain.LockResponse{LockKey: value}, nil
+}
+
 func (l Locker) UnLock(ctx context.Context, key, lockKey string) (*domain.LockResponse, error) {
 	key = makeKey(l.prefix, key)
 

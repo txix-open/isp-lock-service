@@ -6,6 +6,7 @@ import (
 	"isp-lock-service/routes"
 
 	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/shutdown"
 )
 
@@ -22,10 +23,9 @@ var (
 // @host localhost:9000
 // @BasePath /api/isp-lock-service
 
-//go:generate swag init
-//go:generate rm -f docs/swagger.json docs/docs.go
+//go:generate swag init -pd -ot json -eot json
 func main() {
-	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors())
+	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors(), cluster.GrpcTransport)
 	app := boot.App
 	logger := app.Logger()
 

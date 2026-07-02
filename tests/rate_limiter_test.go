@@ -137,7 +137,7 @@ func TestRateLimiterInMemInfiniteKey(t *testing.T) {
 
 	resp, err := r.LimitInMem(ctx, key, 1, true)
 	required.NoError(err)
-	required.True(resp.PassAfter > 0)
+	required.Positive(resp.PassAfter)
 }
 
 func TestRateLimiterInMemLowRPSCase(t *testing.T) {
