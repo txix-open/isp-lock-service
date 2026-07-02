@@ -10,6 +10,7 @@ import (
 
 type LockerService interface {
 	Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error)
+	TryLock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error)
 	UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error)
 }
 
@@ -37,6 +38,20 @@ func NewLocker(logger log.Logger, s LockerService) Locker {
 // @Router /api/isp-lock-service/lock [POST]
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	return l.s.Lock(ctx, req)
+}
+
+// TryLock
+// @Tags locker
+// @Summary однократная попытка взять лок без ретраев
+// @Description Пытаемся взять лок один раз. В отличие от Lock, не делает повторных попыток. При успехе возвращаем ключ для разблокировки.
+// @Param key query string true "строка для лока"
+// @Param ttlInSec query int true "число секунд после которых блокировка снимется автоматически"
+// @Accept json
+// @Produce json
+// @Success 200 {object} domain.LockResponse
+// @Router /api/isp-lock-service/try_lock [POST]
+func (l Locker) TryLock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
+	return l.s.TryLock(ctx, req)
 }
 
 // UnLock

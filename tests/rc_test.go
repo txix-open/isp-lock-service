@@ -2,6 +2,8 @@ package tests_test
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,7 +23,7 @@ func NewRedis(test *test.Test) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: addr})
 }
 
-func TestOne(t *testing.T) {
+func TestOneLock(t *testing.T) {
 	t.Parallel()
 
 	tst, required := test.New(t)
@@ -63,6 +65,86 @@ func TestOne(t *testing.T) {
 
 	_, err = r.UnLock(ctx, key, l.LockKey)
 	required.NoError(err)
+}
+
+func TestOneTryLock(t *testing.T) {
+	t.Parallel()
+
+	tst, required := test.New(t)
+	rcli := NewRedis(tst)
+	ctx := t.Context()
+
+	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
+
+	// success story
+	key := time.Now().String()
+	l, err := r.TryLock(ctx, key, 1)
+	required.NoError(err)
+
+	_, err = r.UnLock(ctx, key, l.LockKey)
+	required.NoError(err)
+
+	// second lock — no wait, immediate error on conflict
+	resp, err := r.TryLock(ctx, key, 1)
+	required.NoError(err)
+
+	_, err = r.TryLock(ctx, key, 1)
+	required.Error(err)
+	if err != nil {
+		required.Error(err, "fail lock")
+	}
+
+	_, err = r.UnLock(ctx, key, resp.LockKey)
+	required.NoError(err)
+}
+
+func TestTryLockAfterTTL(t *testing.T) {
+	t.Parallel()
+
+	tst, required := test.New(t)
+	rcli := NewRedis(tst)
+	ctx := t.Context()
+
+	r := repository.NewLocker(tst.Logger(), rcli, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
+
+	key := time.Now().String()
+	_, err := r.TryLock(ctx, key, 1)
+	required.NoError(err)
+
+	time.Sleep(1200 * time.Millisecond)
+
+	l2, err := r.TryLock(ctx, key, 1)
+	required.NoError(err)
+
+	_, err = r.UnLock(ctx, key, l2.LockKey)
+	required.NoError(err)
+}
+
+func TestTryLockConcurrency(t *testing.T) {
+	t.Parallel()
+	tst, required := test.New(t)
+	redis := NewRedis(tst)
+
+	r := repository.NewLocker(tst.Logger(), redis, conf.Redis{Prefix: "testPrefix"}, conf.LockSettings{})
+
+	var successCount atomic.Int64
+
+	group := new(sync.WaitGroup)
+	for range 10000 {
+		group.Add(1)
+		group.Go(func() {
+			defer group.Done()
+			resp, err := r.TryLock(t.Context(), "key", 5)
+			if err != nil {
+				return
+			}
+			successCount.Add(1)
+			_, err = r.UnLock(t.Context(), "key", resp.LockKey)
+			required.NoError(err)
+		})
+	}
+	group.Wait()
+	required.Positive(successCount.Load())
 }
 
 func TestConcurrency(t *testing.T) {

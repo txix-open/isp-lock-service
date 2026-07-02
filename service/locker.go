@@ -10,6 +10,7 @@ import (
 
 type LockerRepo interface {
 	Lock(ctx context.Context, key string, ttlInSec int) (*domain.LockResponse, error)
+	TryLock(ctx context.Context, key string, ttlInSec int) (*domain.LockResponse, error)
 	UnLock(ctx context.Context, key, lockKey string) (*domain.LockResponse, error)
 }
 
@@ -28,6 +29,11 @@ func NewLocker(logger log.Logger, repo LockerRepo) Locker {
 func (l Locker) Lock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
 	// nolint: wrapcheck
 	return l.repo.Lock(ctx, req.Key, req.TTLInSec)
+}
+
+func (l Locker) TryLock(ctx context.Context, req domain.LockRequest) (*domain.LockResponse, error) {
+	// nolint: wrapcheck
+	return l.repo.TryLock(ctx, req.Key, req.TTLInSec)
 }
 
 func (l Locker) UnLock(ctx context.Context, req domain.UnLockRequest) (*domain.LockResponse, error) {
