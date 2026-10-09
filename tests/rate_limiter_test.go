@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txix-open/isp-kit/test"
-	"github.com/txix-open/isp-kit/test/fake"
 	"isp-lock-service/conf"
 	"isp-lock-service/domain"
 	"isp-lock-service/repository"
+
+	"github.com/txix-open/isp-kit/test"
+	"github.com/txix-open/isp-kit/test/fake"
 )
 
 func TestRateLimiter(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRateLimiter(t *testing.T) {
 		ctx    = t.Context()
 	)
 	for i := range maxRps {
-		resp, err := r.Limit(ctx, key, maxRps)
+		resp, err := r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: maxRps})
 		required.NoError(err)
 		exp := &domain.RateLimiterResponse{
 			Allow:      true,
@@ -40,7 +41,7 @@ func TestRateLimiter(t *testing.T) {
 		required.EqualValues(exp, resp)
 	}
 
-	resp, err := r.Limit(ctx, key, maxRps)
+	resp, err := r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: maxRps})
 	required.NoError(err)
 	exp := &domain.RateLimiterResponse{
 		Allow:      false,
@@ -51,7 +52,7 @@ func TestRateLimiter(t *testing.T) {
 	required.EqualValues(exp, resp)
 
 	time.Sleep(time.Second)
-	resp, err = r.Limit(ctx, key, maxRps)
+	resp, err = r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: maxRps})
 	required.NoError(err)
 	exp = &domain.RateLimiterResponse{
 		Allow:      true,
@@ -62,7 +63,7 @@ func TestRateLimiter(t *testing.T) {
 
 	for range 1000 {
 		key := fake.It[string]()
-		resp, err := r.Limit(ctx, key, 1)
+		resp, err := r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: 1})
 		required.NoError(err)
 		exp := &domain.RateLimiterResponse{
 			Allow:      true,
@@ -71,6 +72,45 @@ func TestRateLimiter(t *testing.T) {
 		}
 		required.EqualValues(exp, resp)
 	}
+}
+
+func TestRateLimiterWithPeriod(t *testing.T) {
+	t.Parallel()
+	tst, required := test.New(t)
+	redis := NewRedis(tst)
+	r := repository.NewRateLimiter(tst.Logger(), redis, conf.Remote{
+		Redis: conf.Redis{Prefix: "test"},
+		InMemLimiter: conf.InMemLimiter{
+			ClearPeriodInSec:      10,
+			LastUseThresholdInSec: 10,
+		},
+	})
+	tst.T().Cleanup(r.Close)
+
+	var (
+		req = domain.RateLimiterRequest{
+			Key:         fake.It[string](),
+			MaxRps:      1,
+			PeriodInSec: 60,
+			Burst:       1,
+		}
+		ctx = t.Context()
+	)
+
+	resp, err := r.Limit(ctx, req)
+	required.NoError(err)
+	required.True(resp.Allow)
+
+	resp, err = r.Limit(ctx, req)
+	required.NoError(err)
+	required.False(resp.Allow)
+	required.Greater(resp.RetryAfter, 59*time.Second)
+	firstRetryAfter := resp.RetryAfter
+
+	resp, err = r.Limit(ctx, req)
+	required.NoError(err)
+	required.False(resp.Allow)
+	required.LessOrEqual(resp.RetryAfter, firstRetryAfter)
 }
 
 func TestRateLimiterInMem(t *testing.T) {
@@ -186,7 +226,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 
 	b.Run("Limit", func(b *testing.B) {
 		for range b.N {
-			_, err := r.Limit(ctx, key, maxRps)
+			_, err := r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: maxRps})
 			if err != nil {
 				b.Fatalf("unexpected error: %v", err)
 			}
@@ -227,7 +267,7 @@ func BenchmarkRateLimiter2(b *testing.B) {
 			for i := range 100 {
 				maxRps := i + 1
 				for _, key := range keys {
-					_, err := r.Limit(ctx, key, maxRps)
+					_, err := r.Limit(ctx, domain.RateLimiterRequest{Key: key, MaxRps: maxRps})
 					if err != nil {
 						b.Fatalf("unexpected error for maxRps %d and key %s: %v", maxRps, key, err)
 					}

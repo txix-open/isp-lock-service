@@ -48,8 +48,22 @@ func NewRateLimiter(logger log.Logger, cli goredislib.UniversalClient, cfg conf.
 	return limiter
 }
 
-func (r *RateLimiter) Limit(ctx context.Context, key string, maxRps int) (*domain.RateLimiterResponse, error) {
-	res, err := r.cli.Allow(ctx, makeKey(r.prefix, key), redis_rate.PerSecond(maxRps))
+func (r *RateLimiter) Limit(ctx context.Context, req domain.RateLimiterRequest) (*domain.RateLimiterResponse, error) {
+	period := time.Second
+	if req.PeriodInSec > 0 {
+		period = time.Duration(req.PeriodInSec) * time.Second
+	}
+	burst := req.Burst
+	if burst <= 0 {
+		burst = req.MaxRps
+	}
+	limit := redis_rate.Limit{
+		Rate:   req.MaxRps,
+		Period: period,
+		Burst:  burst,
+	}
+
+	res, err := r.cli.Allow(ctx, makeKey(r.prefix, req.Key), limit)
 	if err != nil {
 		return nil, errors.WithMessage(err, "allow request")
 	}
