@@ -11,8 +11,8 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"golang.org/x/exp/rand"
 
-	"github.com/pkg/errors"
 	goredislib "github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/log"
 )
 
