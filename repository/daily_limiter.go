@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/redis/go-redis/v9"
 	"isp-lock-service/conf"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 const (

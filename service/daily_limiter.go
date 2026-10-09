@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"isp-lock-service/domain"
+
+	"github.com/txix-open/isp-kit/errors"
 )
 
 type dailyLimiterRepo interface {
