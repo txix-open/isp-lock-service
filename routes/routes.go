@@ -2,10 +2,12 @@ package routes
 
 import (
 	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/common_endpoints"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
 
 	"isp-lock-service/controller"
+	"isp-lock-service/docs"
 )
 
 type Controllers struct {
@@ -15,12 +17,15 @@ type Controllers struct {
 }
 
 func EndpointDescriptors() []cluster.EndpointDescriptor {
-	return endpointDescriptors(Controllers{})
+	return concatDescriptors(endpointDescriptors(Controllers{}), commonEndpoints())
 }
 
 func Handler(wrapper endpoint.Wrapper, c Controllers) *grpc.Mux {
 	muxer := grpc.NewMux()
 	for _, descriptor := range endpointDescriptors(c) {
+		muxer.Handle(descriptor.Path, wrapper.Endpoint(descriptor.Handler))
+	}
+	for _, descriptor := range commonEndpoints() {
 		muxer.Handle(descriptor.Path, wrapper.Endpoint(descriptor.Handler))
 	}
 	return muxer
@@ -32,6 +37,11 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		Inner:            true,
 		UserAuthRequired: false,
 		Handler:          c.Locker.Lock,
+	}, {
+		Path:             "isp-lock-service/try_lock",
+		Inner:            true,
+		UserAuthRequired: false,
+		Handler:          c.Locker.TryLock,
 	}, {
 		Path:             "isp-lock-service/unlock",
 		Inner:            true,
@@ -63,4 +73,18 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		UserAuthRequired: false,
 		Handler:          c.RateLimiter.LimitInMem,
 	}}
+}
+
+func commonEndpoints() []cluster.EndpointDescriptor {
+	return common_endpoints.CommonEndpoints("isp-lock-service",
+		common_endpoints.WithSwaggerEndpoint(docs.SwaggerJson),
+	)
+}
+
+func concatDescriptors(descs ...[]cluster.EndpointDescriptor) []cluster.EndpointDescriptor {
+	result := make([]cluster.EndpointDescriptor, 0)
+	for _, desc := range descs {
+		result = append(result, desc...)
+	}
+	return result
 }

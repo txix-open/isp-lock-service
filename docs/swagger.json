@@ -1,0 +1,161 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Шаблон сервиса",
+        "title": "isp-lock-service",
+        "contact": {},
+        "license": {
+            "name": "GNU GPL v3.0"
+        },
+        "version": "1.0.0"
+    },
+    "host": "localhost:9000",
+    "basePath": "/api/isp-lock-service",
+    "paths": {
+        "/api/isp-lock-service/lock": {
+            "post": {
+                "description": "Возвращаем ключ для разблокировки",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "locker"
+                ],
+                "summary": "выставляем лок на строку",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "строка для лока",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "число секунд после которых блокировка снимется автоматически",
+                        "name": "ttlInSec",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.LockResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/isp-lock-service/try_lock": {
+            "post": {
+                "description": "Пытаемся взять лок один раз. В отличие от Lock, не делает повторных попыток. При успехе возвращаем ключ для разблокировки.\nПри получение ошибки, что лок уже занят, возращаем ошибку с кодом 423.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "locker"
+                ],
+                "summary": "однократная попытка взять лок без ретраев",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "строка для лока",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "число секунд после которых блокировка снимется автоматически",
+                        "name": "ttlInSec",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.LockResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "lock already taken",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/isp-lock-service/unlock": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "locker"
+                ],
+                "summary": "снимаем лок со строки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "строка для лока",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ключ для разблокировки, полученный из Lock",
+                        "name": "lockKey",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "apierrors.Error": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "errorCode": {
+                    "type": "integer"
+                },
+                "errorMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.LockResponse": {
+            "type": "object",
+            "properties": {
+                "lockKey": {
+                    "description": "nolint: tagliatelle",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
