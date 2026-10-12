@@ -3,16 +3,17 @@ package assembly
 import (
 	"context"
 
-	goredislib "github.com/redis/go-redis/v9"
-	"github.com/txix-open/isp-kit/observability/sentry"
-	"github.com/txix-open/isp-kit/rc"
 	"isp-lock-service/conf"
 	"isp-lock-service/repository"
 
-	"github.com/pkg/errors"
+	goredislib "github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/observability/sentry"
+	"github.com/txix-open/isp-kit/rc"
+
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/bootstrap"
 	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/log"
 )

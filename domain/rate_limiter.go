@@ -5,8 +5,10 @@ import (
 )
 
 type RateLimiterRequest struct {
-	Key    string `validate:"required"`
-	MaxRps int    `validate:"required"`
+	Key         string `validate:"required"`
+	MaxRps      int    `validate:"required"`
+	PeriodInSec int
+	Burst       int
 }
 
 type RateLimiterInMemRequest struct {

@@ -11,8 +11,8 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"golang.org/x/exp/rand"
 
-	"github.com/pkg/errors"
 	goredislib "github.com/redis/go-redis/v9"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/log"
 )
 
@@ -68,6 +68,23 @@ func (l Locker) Lock(ctx context.Context, key string, ttl int) (*domain.LockResp
 	)
 
 	err := mtx.Lock()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "fail lock. key=%s", key)
+	}
+
+	value := mtx.Value()
+
+	return &domain.LockResponse{LockKey: value}, nil
+}
+
+func (l Locker) TryLock(_ context.Context, key string, ttl int) (*domain.LockResponse, error) {
+	key = makeKey(l.prefix, key)
+
+	mtx := l.cli.NewMutex(key,
+		redsync.WithExpiry(time.Duration(ttl)*time.Second),
+	)
+
+	err := mtx.TryLock()
 	if err != nil {
 		return nil, errors.WithMessagef(err, "fail lock. key=%s", key)
 	}
